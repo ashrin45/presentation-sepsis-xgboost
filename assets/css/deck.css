@@ -66,6 +66,14 @@ html, body {
   color: var(--muted);
   margin-top: 8px;
 }
+.slide .byline {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
 .slide .phrase-cle-haut {
   font-weight: 400;
   font-size: 22px;
