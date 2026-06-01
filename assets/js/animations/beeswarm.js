@@ -42,6 +42,29 @@
 
     let rows = [];
     if (Array.isArray(src.data)) {
+      // Format 3 (production export) : flat array of {feature, shap, value}, F entries per patient
+      const first = src.data[0];
+      if (first && typeof first.feature === 'string' && typeof first.shap === 'number') {
+        const F = features.length;
+        if (F > 0 && src.data.length % F === 0) {
+          const nPatients = src.data.length / F;
+          for (let p = 0; p < nPatients; p++) {
+            const shap = new Array(F).fill(NaN);
+            const val  = new Array(F).fill(NaN);
+            for (let j = 0; j < F; j++) {
+              const e = src.data[p * F + j];
+              if (!e) continue;
+              const idx = features.indexOf(e.feature);
+              if (idx >= 0) {
+                shap[idx] = Number(e.shap);
+                val[idx]  = (e.value !== null && e.value !== undefined) ? Number(e.value) : NaN;
+              }
+            }
+            rows.push({ shap, val });
+          }
+          return { features, rows };
+        }
+      }
       // Format 1 : data = [{ shap_values, feature_values }]
       for (const pt of src.data) {
         const sv = pt.shap_values || pt.shap || {};

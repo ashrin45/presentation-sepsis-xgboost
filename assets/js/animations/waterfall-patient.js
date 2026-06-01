@@ -115,9 +115,23 @@
       const opacity = isProxy ? 0.9 : 0.75;
 
       const sign = s.shap >= 0 ? '+' : '';
+      function formatValue(feature, v) {
+        if (v === null || v === undefined || v === '') return '';
+        if (typeof v !== 'number') return String(v);
+        // Variables binaires ou one-hot, valeurs entières attendues
+        if (/^mode_|granul_immatures_present/.test(feature)) {
+          return v >= 0.5 ? '1' : '0';
+        }
+        // Variables qui s'arrondissent à l'entier (G/L, plaquettes en x10^9)
+        if (/^plaquettes|leucocytes$|PNN$|granul_immatures_pct/.test(feature)) {
+          return Math.round(v).toString();
+        }
+        // Reste : 1 décimale
+        return v.toFixed(1).replace('.', ',');
+      }
       const valLabel = (s.value === null || s.value === undefined || s.value === '')
         ? ''
-        : ` = ${typeof s.value === 'number' ? s.value : String(s.value)}`;
+        : ` = ${formatValue(s.feature, s.value)}`;
 
       const featLabel = isProxy
         ? `<tspan font-weight="700" fill="${BRICK}">${s.feature}</tspan>`

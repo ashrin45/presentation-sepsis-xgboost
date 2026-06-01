@@ -194,18 +194,48 @@
       if (captionEl) captionEl.textContent = commentFor(idx);
     }
 
+    // Indicateur pause / clic + auto-play
+    const hint = document.createElement('div');
+    hint.style.cssText = 'margin-top:6px;font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-align:center;cursor:pointer;user-select:none;';
+    hint.innerHTML = '<span data-slot="play-state">▶ auto</span> &nbsp;·&nbsp; cliquez l\'histogramme pour avancer manuellement';
+    container.querySelector('div').appendChild(hint);
+    const playState = hint.querySelector('[data-slot="play-state"]');
+
     // Boucle d'animation
     let rafId = null;
     let lastTs = performance.now();
     let elapsed = 0;
     let stepIdx = 0;
-    let running = true;
+    let autoPlay = true;
     const cycleLen = HOLD_MS + MORPH_MS;
+
+    function setPlayState() {
+      playState.textContent = autoPlay ? '▶ auto' : '⏸ pause';
+    }
+
+    function advanceManual() {
+      autoPlay = false;
+      elapsed = 0;
+      stepIdx = (stepIdx + 1) % stages.length;
+      renderBins(stages[stepIdx].bins);
+      setLabel(stages[stepIdx], null, 0);
+      setPlayState();
+    }
+
+    // Click sur l'animation = avance manuel, pause l'auto-play
+    const svgEl = container.querySelector('svg');
+    if (svgEl) svgEl.style.cursor = 'pointer';
+    svgEl.addEventListener('click', advanceManual);
+    hint.addEventListener('click', () => {
+      autoPlay = !autoPlay;
+      if (autoPlay) elapsed = 0;
+      setPlayState();
+    });
 
     function loop(ts) {
       const dt = ts - lastTs;
       lastTs = ts;
-      if (running) elapsed += dt;
+      if (autoPlay) elapsed += dt;
 
       const current = stages[stepIdx];
       const next    = stages[(stepIdx + 1) % stages.length];
@@ -233,7 +263,7 @@
     rafId = requestAnimationFrame(loop);
 
     container._residualsCleanup = () => {
-      running = false;
+      autoPlay = false;
       if (rafId) cancelAnimationFrame(rafId);
       rafId = null;
     };

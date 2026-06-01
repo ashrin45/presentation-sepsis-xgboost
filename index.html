@@ -46,27 +46,35 @@
       </div>
 
       <div class="s0b-grid">
-        <table class="metrics s0b-table">
-          <thead>
-            <tr><th>Variable</th><th>Type / unité</th><th>Exemple</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>leucocytes</td>          <td>numérique, G/L</td>     <td class="num">9,8</td></tr>
-            <tr><td>PNN (neutrophiles)</td>  <td>numérique, G/L</td>     <td class="num">6,2</td></tr>
-            <tr><td>lymphocytes</td>         <td>numérique, G/L</td>     <td class="num">1,4</td></tr>
-            <tr><td>NLR (PNN / lympho)</td>  <td>numérique, ratio</td>   <td class="num">4,4</td></tr>
-            <tr><td>granul. immatures (%)</td><td>numérique, %</td>      <td class="num">0,3</td></tr>
-            <tr><td>granul. immatures (présent)</td><td>binaire 0 / 1</td><td class="num">0</td></tr>
-            <tr><td>plaquettes</td>          <td>numérique, G/L</td>     <td class="num">240</td></tr>
-            <tr><td>éosinophiles</td>        <td>numérique, G/L, ~2 % manquants</td><td class="num">0,12</td></tr>
-            <tr><td>monocytes</td>           <td>numérique, G/L</td>     <td class="num">0,6</td></tr>
-            <tr><td>hémoglobine</td>         <td>numérique, g/dL</td>    <td class="num">13,1</td></tr>
-            <tr><td>VPM</td>                 <td>numérique, fL, ~5 % manquants</td><td class="num">10,5</td></tr>
-            <tr><td>RDW</td>                 <td>numérique, %, ~10 % manquants</td><td class="num">13,4</td></tr>
-            <tr><td>mode de prise en charge</td><td>catégorielle (3 modalités)</td><td>Hospitalisé</td></tr>
-            <tr><td><strong>hémoculture positive</strong></td><td><strong>cible binaire 0 / 1</strong></td><td class="num"><strong>1</strong></td></tr>
-          </tbody>
-        </table>
+        <div class="s0b-cats">
+          <div class="s0b-cat">
+            <div class="s0b-cat-title">Lignée blanche et formule</div>
+            <ul>
+              <li><strong>leucocytes</strong> (globules blancs totaux), G/L</li>
+              <li><strong>PNN</strong> (polynucléaires neutrophiles, les premiers à monter en infection bactérienne), G/L</li>
+              <li><strong>lymphocytes</strong>, G/L</li>
+              <li><strong>NLR</strong> (ratio neutrophiles sur lymphocytes, marqueur de stress immunitaire)</li>
+              <li><strong>granuleux immatures</strong> (myélémie, présence et %)</li>
+              <li><strong>éosinophiles</strong>, G/L · <strong>monocytes</strong>, G/L</li>
+            </ul>
+          </div>
+          <div class="s0b-cat">
+            <div class="s0b-cat-title">Lignée rouge et plaquettes</div>
+            <ul>
+              <li><strong>hémoglobine</strong>, g/dL</li>
+              <li><strong>plaquettes</strong>, G/L</li>
+              <li><strong>VPM</strong> (volume plaquettaire moyen, en fL, ~5 % manquants)</li>
+              <li><strong>RDW</strong> (indice de distribution des globules rouges, mesure la variabilité de leur taille, en %, ~10 % manquants)</li>
+            </ul>
+          </div>
+          <div class="s0b-cat">
+            <div class="s0b-cat-title">Contexte et cible</div>
+            <ul>
+              <li><strong>mode de prise en charge</strong> : Hospitalisé / Domicile / Soins de suite</li>
+              <li><strong>hémoculture positive</strong> : cible binaire 0 ou 1 (présence de bactérie dans le sang)</li>
+            </ul>
+          </div>
+        </div>
 
         <div class="s0b-side">
           <div class="s0b-stat">
@@ -82,22 +90,14 @@
             <div class="s0b-stat-value">12</div>
           </div>
           <div class="s0b-stat">
-            <div class="s0b-stat-label">Manquants présents</div>
+            <div class="s0b-stat-label">Manquants</div>
             <div class="s0b-stat-value">~13 %</div>
-          </div>
-          <div class="s0b-stat">
-            <div class="s0b-stat-label">Modalités prise en charge</div>
-            <div class="s0b-stat-value" style="font-size:14px;font-weight:500;">Hospitalisé · Domicile · Soins de suite</div>
-          </div>
-          <div class="s0b-stat">
-            <div class="s0b-stat-label">Seed</div>
-            <div class="s0b-stat-value" style="font-family:'JetBrains Mono',monospace;font-size:14px;">2026</div>
           </div>
         </div>
       </div>
 
       <div class="phrase-cle-bas" style="font-size:14px;">
-        Tabulaire, manquants réalistes, classes déséquilibrées, cible binaire : exactement le profil de problème que XGBoost gère bien (et qu'on va attaquer ensuite).
+        Tabulaire, manquants réalistes, classes déséquilibrées, cible binaire : exactement le profil de problème que XGBoost gère bien.
       </div>
     </section>
 
@@ -105,7 +105,7 @@
     <section class="slide" data-slide="S1a">
       <h1 style="font-size:38px;">Pourquoi XGBoost ici, le plafond des modèles simples.</h1>
       <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
-        Sur le sepsis, la chaîne RL puis RF bute toujours sur le même mur, un recall qui s'effondre dès qu'on respecte la prévalence réelle.
+        Sur le sepsis, la chaîne régression logistique puis Random Forest bute toujours sur le même mur : un recall qui s'effondre dès qu'on respecte la prévalence réelle.
       </div>
 
       <div class="defs-box">
@@ -120,9 +120,9 @@
             <tr><th>Modèle</th><th>Accuracy</th><th>Recall @ 0,5</th><th>AUC-PR</th></tr>
           </thead>
           <tbody id="s1a-tbody">
-            <tr><td>RL, classes équilibrées 50/50</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
-            <tr><td>RL, vraie prévalence 6,5 %</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
-            <tr><td>RF, vraie prévalence (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>Régression logistique, classes équilibrées 50/50</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>Régression logistique, vraie prévalence 6,5 %</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>Random Forest, vraie prévalence (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
           </tbody>
         </table>
         <div id="leucocytes-u"></div>
@@ -216,17 +216,22 @@
 
     <!-- ============================================== S3b ============================================== -->
     <section class="slide" data-slide="S3b">
-      <h1>Le gradient boosting apprend la suite des résidus.</h1>
-      <div class="phrase-cle-haut">
+      <h1 style="font-size:38px;">Le gradient boosting apprend la suite des résidus.</h1>
+      <div class="phrase-cle-haut" style="font-size:17px; margin-top:14px;">
         Chaque arbre ne réapprend pas le problème. Il apprend juste ce que le précédent n'a pas su faire.
+        <br><strong>Résidu</strong> = écart entre la vérité (0 ou 1) et la probabilité prédite par le modèle à l'étape courante. Un résidu proche de 0 = patient bien classé. Un résidu loin de 0 = le modèle s'est trompé.
       </div>
-      <div class="formula-box">
+      <div class="formula-box" style="font-size:15px; padding:10px 16px; margin:10px 0;">
         F<sub>m+1</sub>(x) = F<sub>m</sub>(x) + η · h<sub>m+1</sub>(x)
-        <div class="formula-note">avec h<sub>m+1</sub> entraîné à prédire <code>−∂L / ∂F</code> (gradient négatif de la loss). Résidu = écart entre vérité et prédiction courante.</div>
+        <div class="formula-note" style="margin-top:6px; text-align:left;">
+          <strong>F<sub>m</sub>(x)</strong> : modèle courant après m arbres (somme des sorties des m premiers arbres) ·
+          <strong>η</strong> (learning rate) : facteur de freinage, on n'ajoute qu'une fraction de chaque nouvel arbre ·
+          <strong>h<sub>m+1</sub></strong> : le nouvel arbre, entraîné à prédire les résidus du modèle F<sub>m</sub>.
+        </div>
       </div>
       <div id="residuals-evolution" class="residuals-evolution"></div>
-      <div class="phrase-cle-bas">
-        Friedman 1999 : c'est équivalent à une descente de gradient dans l'espace des fonctions. D'où le nom « gradient boosting ».
+      <div class="phrase-cle-bas" style="font-size:14px;">
+        L'animation montre la distribution des résidus à différentes itérations du boosting. Cliquez sur l'histogramme pour avancer manuellement, sinon la lecture est automatique.
       </div>
     </section>
 
@@ -260,23 +265,28 @@
 
     <!-- ============================================== S3d ============================================== -->
     <section class="slide" data-slide="S3d">
-      <h1>Les valeurs manquantes, XGBoost apprend où les envoyer.</h1>
-      <div class="phrase-cle-haut">
-        Pas de moyenne, pas de médiane, pas de kNN. À chaque nœud, le modèle apprend une direction par défaut pour les NaN.
+      <h1 style="font-size:38px;">Les valeurs manquantes, XGBoost apprend où les envoyer.</h1>
+      <div class="phrase-cle-haut" style="font-size:17px; margin-top:14px;">
+        Pas de moyenne, pas de médiane, pas de kNN. À chaque nœud d'arbre, le modèle apprend une direction par défaut pour les NaN (les valeurs absentes).
       </div>
-      <div id="nan-default-direction" style="margin-top:24px;"></div>
-      <div class="phrase-cle-bas">
-        Pour la NFS, où VPM ou RDW manquent selon l'analyseur, c'est un avantage net. Pas d'imputation, donc pas de biais d'imputation.
+      <div class="defs-box">
+        <div><strong>NLR élevé</strong> : le ratio neutrophiles sur lymphocytes dépasse ~5, signe que les neutrophiles montent et les lymphocytes baissent, profil typique d'une infection bactérienne aiguë.</div>
+        <div><strong>Imputation</strong> : remplacer une valeur manquante par une valeur fabriquée (moyenne, médiane, kNN, etc.) pour que l'algorithme puisse calculer. C'est ce que font régression logistique et random forest, qui n'acceptent pas les NaN.</div>
+        <div><strong>Biais d'imputation</strong> : l'imputation introduit une information artificielle. Si on remplace toutes les RDW manquantes par la médiane, on suppose implicitement que ces patients ont une RDW « moyenne », ce qui peut être faux (un RDW manquant pourrait corréler avec le type d'analyseur, le service, la sévérité). XGBoost l'évite : il garde le « manquant » comme une information à part entière.</div>
+      </div>
+      <div id="nan-default-direction" style="margin-top:14px;"></div>
+      <div class="phrase-cle-bas" style="font-size:14px;">
+        Pour la NFS où VPM ou RDW peuvent manquer selon l'analyseur, c'est un avantage net : pas d'imputation, donc pas de biais d'imputation.
       </div>
     </section>
 
     <!-- ============================================== S3e ============================================== -->
     <section class="slide" data-slide="S3e">
-      <h1><code>scale_pos_weight</code>, la réponse paramétrique au déséquilibre.</h1>
-      <div class="phrase-cle-haut">
+      <h1 style="font-size:38px;"><code>scale_pos_weight</code>, la réponse paramétrique au déséquilibre.</h1>
+      <div class="phrase-cle-haut" style="font-size:17px; margin-top:12px;">
         Le ratio négatifs sur positifs dans la cohorte devient directement le poids appliqué au gradient de la classe positive.
       </div>
-      <div class="defs-box">
+      <div class="defs-box" style="margin-top:10px;">
         <div><strong>scale_pos_weight</strong> : hyperparamètre XGBoost qui multiplie le gradient (et la perte) des observations positives. Équilibre artificiel des classes pendant l'apprentissage, sans rééchantillonner.</div>
       </div>
       <div class="s3e-grid">
@@ -308,28 +318,22 @@
 
     <!-- ============================================== S4a ============================================== -->
     <section class="slide" data-slide="S4a">
-      <h1>XGBoost sur la cohorte simulée, les chiffres.</h1>
-      <div class="phrase-cle-haut">
-        Pas un saut de discrimination globale, un saut de rappel.
+      <h1 style="font-size:42px;">XGBoost sur la cohorte simulée, les chiffres.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:16px;">
+        Sur les métriques de discrimination (AUC), Random Forest et XGBoost se valent. Le saut de XGBoost, c'est sur le <strong>recall</strong> à seuil égal.
       </div>
-      <div class="s4a-grid">
-        <table class="metrics" id="s4a-table">
-          <thead>
-            <tr><th>Modèle</th><th>AUC-ROC</th><th>AUC-PR</th><th>Recall @ 0,5</th><th>Precision @ 0,5</th></tr>
-          </thead>
-          <tbody id="s4a-tbody">
-            <tr><td>RL prévalence réelle (naïve)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
-            <tr><td>Random Forest (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
-            <tr><td>XGBoost</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
-          </tbody>
-        </table>
-        <div class="callout-teal">
-          <strong>Lecture honnête.</strong><br>
-          AUC-ROC : XGB au coude à coude avec RF.<br>
-          AUC-PR : quasi équivalents.<br>
-          Recall @ 0,5 : crescendo net 0,03 puis 0,65 puis 0,73. Le gain XGBoost est sur la sensibilité.
-        </div>
-      </div>
+
+      <table class="metrics" id="s4a-table" style="margin-top:22px;">
+        <thead>
+          <tr><th>Modèle</th><th>AUC-ROC</th><th>AUC-PR</th><th>Recall @ 0,5</th><th>Precision @ 0,5</th></tr>
+        </thead>
+        <tbody id="s4a-tbody">
+          <tr><td>Régression logistique, prévalence réelle (naïve)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+          <tr><td>Random Forest (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+          <tr class="row-highlight"><td><strong>XGBoost</strong></td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+        </tbody>
+      </table>
+
       <div class="phrase-cle-bas">
         Le gain XGBoost n'est pas dans la discrimination, il est dans la sensibilité à seuil égal. C'est exactement ce qu'on veut en sepsis.
       </div>
@@ -350,39 +354,38 @@
     <!-- ============================================== S5a ============================================== -->
     <section class="slide" data-slide="S5a">
       <h1 style="font-size:38px;">SHAP, expliquer chaque prédiction individuellement.</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
-        <strong>SHAP</strong> (SHapley Additive exPlanations) répond à « <em>pourquoi le modèle a sorti CETTE prédiction pour CE patient ?</em> ». Il décompose chaque prédiction en contributions chiffrées par variable.
+      <div class="phrase-cle-haut" style="font-size:17px; margin-top:12px;">
+        <strong>SHAP</strong> (SHapley Additive exPlanations) attribue à chaque variable une « part de responsabilité » dans la prédiction, pour <em>ce patient précis</em>.
       </div>
-      <div class="defs-box">
-        <div><strong>Origine</strong> : valeur de Shapley (Lloyd Shapley, théorie des jeux, 1953), part équitable d'un joueur dans un gain collectif, moyennée sur tous les ordres d'arrivée possibles.</div>
-        <div><strong>Adaptée au ML</strong> (Lundberg et Lee, 2017) : joueurs = variables, gain = prédiction. La valeur SHAP φᵢ d'une variable est sa contribution à l'écart entre la prédiction de cette instance et la prédiction moyenne du modèle.</div>
+
+      <div class="defs-box" style="margin-top:10px;">
+        <div><strong>L'idée intuitive.</strong> Imaginez 3 amis qui réalisent ensemble un projet et touchent 100 € de prime. Comment partager équitablement ? Lloyd Shapley (Nobel d'économie 2012) répond : chaque ami reçoit la moyenne de sa contribution marginale, calculée sur tous les ordres possibles dans lesquels les amis auraient pu rejoindre le projet.</div>
+        <div><strong>Adaptation au ML</strong> (Lundberg et Lee, 2017) : les variables sont les « joueurs », la prédiction du modèle est le « gain ». La valeur SHAP d'une variable mesure de combien elle pousse la prédiction au-dessus ou en dessous de la moyenne du modèle.</div>
+        <div><strong>En pratique pour un patient sepsis :</strong> SHAP me dit « pour CE patient, son NLR à 12 a poussé +1,8 vers bactériémie, sa lymphopénie a poussé +0,9, et son éosinopénie a poussé +0,4 ». La somme de toutes les contributions vaut exactement l'écart entre sa prédiction et la prévalence moyenne.</div>
       </div>
-      <div class="formula-box">
-        f(x) = E[f(x)] + Σᵢ φᵢ(x)
-        <div class="formula-note">identité fondamentale : la prédiction = la moyenne plus la somme des contributions SHAP.</div>
-      </div>
-      <div class="s5a-grid">
+
+      <div class="s5a-grid" style="margin-top:10px;">
         <div class="card teal-border">
-          <h2>SHAP fait</h2>
+          <h2 style="font-size:16px;">SHAP fait</h2>
           <ul>
-            <li>Explique une prédiction individuelle (locale)</li>
+            <li>Explique une prédiction individuelle</li>
             <li>S'agrège en importance globale (moyenne des |φᵢ|)</li>
-            <li>Détecte des dépendances suspectes</li>
+            <li>Détecte les dépendances suspectes du modèle</li>
             <li>Permet d'auditer un modèle après coup</li>
           </ul>
         </div>
         <div class="card brick-border">
-          <h2>SHAP NE fait PAS</h2>
+          <h2 style="font-size:16px;">SHAP NE fait PAS</h2>
           <ul>
-            <li>N'améliore PAS la prédiction</li>
-            <li>N'équilibre PAS les classes (c'est <code>scale_pos_weight</code> ou rééchantillonnage)</li>
+            <li>N'améliore PAS la prédiction (le modèle est déjà entraîné)</li>
+            <li>N'équilibre PAS les classes</li>
             <li>Ne fait PAS d'inférence causale</li>
             <li>Ne corrige PAS un biais, il le <strong>révèle</strong></li>
           </ul>
         </div>
         <div id="shapley-30s" class="shapley-vignette"></div>
       </div>
-      <div class="phrase-cle-bas">
+      <div class="phrase-cle-bas" style="font-size:14px;">
         SHAP est un microscope, pas un correcteur. Il dit ce que le modèle a appris, pas si c'est juste.
       </div>
     </section>
@@ -416,28 +419,28 @@
 
     <!-- ============================================== S5c ============================================== -->
     <section class="slide" data-slide="S5c">
-      <h1 style="font-size:38px;">Waterfall d'un patient à risque très élevé, NLR, lymphopénie, et un intrus.</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
-        Le modèle attribue une probabilité de bactériémie proche de <span id="s5c-prob">1</span> à ce patient. Décomposons la prédiction variable par variable.
+      <h1 style="font-size:38px;">Waterfall d'un patient à risque très élevé, et un intrus dans les variables.</h1>
+      <div class="phrase-cle-haut" style="font-size:16px; margin-top:12px;">
+        Pour ce patient, le modèle prédit une probabilité proche de <span id="s5c-prob">1</span>. Le waterfall décompose cette prédiction : on part de la prévalence moyenne du modèle (base), chaque variable ajoute (en teal) ou retire (en brick) un peu de probabilité, jusqu'à la prédiction finale.
       </div>
       <div class="s5c-grid">
         <div class="s5c-col">
           <div id="shap-waterfall" class="anim-anchor"></div>
         </div>
         <div class="s5c-col">
-          <div class="warn-card">
-            <strong>La variable suspecte.</strong><br>
-            <code>mode_Hospitalisé</code> contribue positivement à la prédiction.<br><br>
-            Question : signal biologique, ou proxy de sévérité du patient ?<br><br>
-            Réponse : c'est un proxy. Un patient hospitalisé est par construction déjà jugé sévère par un clinicien. La variable « marche » statistiquement, mais elle reflète une indication clinique préalable, pas une physiopathologie.
+          <div class="warn-card" style="font-size:13px;">
+            <strong>L'intrus.</strong> Parmi les variables qui contribuent fortement, on retrouve <code>mode_Hospitalisé</code>. Ce n'est pas un paramètre de NFS, c'est un attribut de contexte. Le modèle l'a appris parce que les patients hospitalisés ont, dans nos données, une prévalence de bactériémie plus élevée (~6,6 %) que les patients à domicile (~3,2 %).
           </div>
-          <div class="callout-teal callout-large">
-            <strong>Corrélation n'est pas causalité.</strong> La variable « mode de prise en charge » prédit, mais elle ne cause pas. Si on l'utilise comme critère, on risque d'amplifier une inégalité : les patients déjà mieux ressourcés (suivi à domicile, moins sévères, mieux entourés) seraient déprioritisés.
+          <div class="callout-teal" style="font-size:13px;">
+            <strong>Pourquoi c'est un problème.</strong> Cette variable <em>prédit</em>, mais elle ne <em>cause</em> pas. Le fait qu'un patient soit hospitalisé est une <strong>conséquence</strong> de sa sévérité, pas une cause de bactériémie. Si on s'en sert pour décider à qui faire une hémoculture, on amplifie une inégalité : les patients à domicile (souvent moins sévères, mieux entourés, déjà mieux ressourcés) seraient déprioritisés. Le modèle <strong>reproduit et automatise</strong> une décision humaine antérieure (qui a été hospitalisé), avec un risque que ce biais soit demain présenté comme « scientifique ».
+          </div>
+          <div class="callout-teal" style="font-size:13px; background: rgba(245, 158, 11, 0.10); border-left-color: var(--amber);">
+            <strong>Ce que SHAP a permis ici.</strong> Sans cet audit, le modèle aurait été déployé sans qu'on remarque que ses prédictions reposent en partie sur le contexte social. SHAP rend visible cette dépendance.
           </div>
         </div>
       </div>
-      <div class="phrase-cle-bas">
-        SHAP révèle. Le clinicien décide. La question n'est pas technique, elle est éthique.
+      <div class="phrase-cle-bas" style="font-size:14px;">
+        SHAP révèle, le clinicien décide. La question n'est pas technique, elle est éthique : faut-il garder cette variable ?
       </div>
     </section>
 
@@ -461,58 +464,6 @@
       </table>
       <div class="callout-teal" style="margin-top:24px; font-size:18px;">
         <em>« Ne pas faire d'IA à tout prix. »</em> Le notebook XGBoost n'est qu'un prétexte. Le vrai sujet est le discernement critique.
-      </div>
-    </section>
-
-    <!-- ============================================== S_REAL ============================================== -->
-    <section class="slide" data-slide="S_REAL">
-      <h1 style="font-size:38px;">Validation sur données réelles, sbcdata Leipzig (744 205 patients).</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
-        Pipeline rejoué tel quel sur les données réelles. La narration tient, et le piège s'aggrave.
-      </div>
-
-      <div class="real-grid">
-        <div>
-          <table class="metrics" style="margin-top:6px;">
-            <thead>
-              <tr><th>Métrique</th><th>Simulé (20 000)</th><th>sbcdata Leipzig</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Prévalence sepsis</td><td class="num">6,5 %</td><td class="num highlight">1,4 %</td></tr>
-              <tr><td>scale_pos_weight</td><td class="num">15</td><td class="num highlight">72</td></tr>
-              <tr><td>RL naïve recall @ 0,5</td><td class="num">0,03</td><td class="num">0,10</td></tr>
-              <tr><td>RL naïve accuracy @ 0,5</td><td class="num">0,93</td><td class="num highlight-brick">0,99</td></tr>
-              <tr><td>RF balanced recall @ 0,5</td><td class="num">0,65</td><td class="num">0,86</td></tr>
-              <tr><td>XGBoost recall @ 0,5</td><td class="num">0,73</td><td class="num highlight">0,88</td></tr>
-              <tr><td>XGBoost AUC-ROC</td><td class="num">0,91</td><td class="num highlight">0,95</td></tr>
-              <tr><td>XGBoost AUC-PR</td><td class="num">0,56</td><td class="num">0,30</td></tr>
-            </tbody>
-          </table>
-          <div class="src-note">
-            Source : Steinbach et al. 2024, <em>Clin. Chem.</em> 70(3):506, DOI 10.1093/clinchem/hvae001. Cohorte 2014 à 2019, CC BY 4.0.
-          </div>
-        </div>
-
-        <div class="real-side">
-          <div class="callout-teal" style="font-size:14px;">
-            <strong>Ce qui tient.</strong><br>
-            • Piège accuracy plus violent : 0,99 d'accuracy avec un recall de 0,10.<br>
-            • Crescendo recall : 0,03 → 0,86 → 0,88 (RF naïf, RF balanced, XGBoost).<br>
-            • XGBoost garde un léger edge en AUC-ROC.<br>
-            • La stratégie de rééquilibrage reste la vraie ligne de fracture.
-          </div>
-          <div class="warn-card" style="font-size:14px;">
-            <strong>Ce qui change.</strong><br>
-            • 5 variables NFS seulement (WBC, HGB, PLT, RBC, MCV) au lieu de 11 (pas de NLR, RDW, différentielle leucocytaire).<br>
-            • Cible = sepsis ICD-10, pas hémoculture positive.<br>
-            • Cohorte = tous les patients avec NFS, pas une suspicion de bactériémie.<br>
-            • Proxy social = <code>Sender</code> (ward d'origine, gradient massif réa → ambulatoire).
-          </div>
-        </div>
-      </div>
-
-      <div class="phrase-cle-bas">
-        L'enseignement central reste intact. Sans stratégie consciente sur le déséquilibre et la métrique, on rate quasiment tous les sepsis. Avec, XGBoost devient compétitif et auditable via SHAP.
       </div>
     </section>
 
@@ -616,19 +567,19 @@
       const accuracy = obj => (obj && obj.at_50 && obj.at_50.accuracy != null) ? obj.at_50.accuracy : null;
       tbody.innerHTML = `
         <tr>
-          <td>RL, classes équilibrées 50/50</td>
+          <td>Régression logistique, classes équilibrées 50/50</td>
           <td class="num">${fmt2(accuracy(rl_eq))}</td>
           <td class="num">${fmt2(recall(rl_eq))}</td>
           <td class="num">${fmt2(rl_eq.auc_pr)}</td>
         </tr>
         <tr>
-          <td>RL, vraie prévalence 6,5 % (naïve)</td>
+          <td>Régression logistique, vraie prévalence 6,5 % (naïve)</td>
           <td class="num">${fmt2(accuracy(rl_naive))}</td>
           <td class="num highlight-brick">${fmt2(recall(rl_naive))}</td>
           <td class="num">${fmt2(rl_naive.auc_pr)}</td>
         </tr>
         <tr>
-          <td>RF, vraie prévalence (class_weight)</td>
+          <td>Random Forest, vraie prévalence (class_weight)</td>
           <td class="num">${fmt2(accuracy(rf))}</td>
           <td class="num highlight">${fmt2(recall(rf))}</td>
           <td class="num">${fmt2(rf.auc_pr)}</td>
