@@ -1,0 +1,21 @@
+# Python
+data-pipeline/.venv/
+data-pipeline/__pycache__/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Heavy / regenerable artefacts
+data-pipeline/models.pkl
+data-pipeline/sepsis_cohort.csv
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo

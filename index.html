@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Détecter un sepsis avec une NFS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/deck.css">
+</head>
+<body>
+  <main class="deck">
+
+    <!-- ============================================== S0 ============================================== -->
+    <section class="slide active" data-slide="S0">
+      <h1>Détecter un sepsis avec une numération formule sanguine.</h1>
+      <div class="subtitle">Cas clinique appliqué à XGBoost et SHAP.</div>
+      <div class="phrase-cle-haut">
+        Une NFS ordinaire, 11 paramètres, quelques euros : peut-elle anticiper qu'une hémoculture reviendra positive ?
+      </div>
+      <div class="meta-row">
+        <div class="meta-item">
+          <div class="meta-label">Données</div>
+          <div class="meta-value">Simulées, ~20 000 épisodes</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Cohorte</div>
+          <div class="meta-value">6,5 % d'hémocultures positives chez les patients hospitalisés avec suspicion de bactériémie</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Variables</div>
+          <div class="meta-value">11 NFS et mode de prise en charge</div>
+        </div>
+      </div>
+      <div class="callout-teal" style="margin-top:auto;">
+        <em>« Ne pas faire d'IA à tout prix. »</em> Le vrai sujet : savoir critiquer XGBoost, pas démontrer qu'il marche.
+      </div>
+    </section>
+
+    <!-- ============================================== S0b structure du dataset ============================================== -->
+    <section class="slide" data-slide="S0b">
+      <h1 style="font-size:38px;">Le dataset, en un coup d'œil.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
+        20 000 patients adultes simulés, 12 variables d'entrée + 1 cible binaire. Prévalence d'hémocultures positives autour de 6 % (la cohorte que l'on prélève en suspicion de bactériémie).
+      </div>
+
+      <div class="s0b-grid">
+        <table class="metrics s0b-table">
+          <thead>
+            <tr><th>Variable</th><th>Type / unité</th><th>Exemple</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>leucocytes</td>          <td>numérique, G/L</td>     <td class="num">9,8</td></tr>
+            <tr><td>PNN (neutrophiles)</td>  <td>numérique, G/L</td>     <td class="num">6,2</td></tr>
+            <tr><td>lymphocytes</td>         <td>numérique, G/L</td>     <td class="num">1,4</td></tr>
+            <tr><td>NLR (PNN / lympho)</td>  <td>numérique, ratio</td>   <td class="num">4,4</td></tr>
+            <tr><td>granul. immatures (%)</td><td>numérique, %</td>      <td class="num">0,3</td></tr>
+            <tr><td>granul. immatures (présent)</td><td>binaire 0 / 1</td><td class="num">0</td></tr>
+            <tr><td>plaquettes</td>          <td>numérique, G/L</td>     <td class="num">240</td></tr>
+            <tr><td>éosinophiles</td>        <td>numérique, G/L, ~2 % manquants</td><td class="num">0,12</td></tr>
+            <tr><td>monocytes</td>           <td>numérique, G/L</td>     <td class="num">0,6</td></tr>
+            <tr><td>hémoglobine</td>         <td>numérique, g/dL</td>    <td class="num">13,1</td></tr>
+            <tr><td>VPM</td>                 <td>numérique, fL, ~5 % manquants</td><td class="num">10,5</td></tr>
+            <tr><td>RDW</td>                 <td>numérique, %, ~10 % manquants</td><td class="num">13,4</td></tr>
+            <tr><td>mode de prise en charge</td><td>catégorielle (3 modalités)</td><td>Hospitalisé</td></tr>
+            <tr><td><strong>hémoculture positive</strong></td><td><strong>cible binaire 0 / 1</strong></td><td class="num"><strong>1</strong></td></tr>
+          </tbody>
+        </table>
+
+        <div class="s0b-side">
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Lignes</div>
+            <div class="s0b-stat-value">20 000</div>
+          </div>
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Prévalence positifs</div>
+            <div class="s0b-stat-value">~6 %</div>
+          </div>
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Variables d'entrée</div>
+            <div class="s0b-stat-value">12</div>
+          </div>
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Manquants présents</div>
+            <div class="s0b-stat-value">~13 %</div>
+          </div>
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Modalités prise en charge</div>
+            <div class="s0b-stat-value" style="font-size:14px;font-weight:500;">Hospitalisé · Domicile · Soins de suite</div>
+          </div>
+          <div class="s0b-stat">
+            <div class="s0b-stat-label">Seed</div>
+            <div class="s0b-stat-value" style="font-family:'JetBrains Mono',monospace;font-size:14px;">2026</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phrase-cle-bas" style="font-size:14px;">
+        Tabulaire, manquants réalistes, classes déséquilibrées, cible binaire : exactement le profil de problème que XGBoost gère bien (et qu'on va attaquer ensuite).
+      </div>
+    </section>
+
+    <!-- ============================================== S1a ============================================== -->
+    <section class="slide" data-slide="S1a">
+      <h1 style="font-size:38px;">Pourquoi XGBoost ici, le plafond des modèles simples.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Sur le sepsis, la chaîne RL puis RF bute toujours sur le même mur, un recall qui s'effondre dès qu'on respecte la prévalence réelle.
+      </div>
+
+      <div class="defs-box">
+        <div><strong>Accuracy</strong> : taux global de prédictions correctes.</div>
+        <div><strong>Recall</strong> (sensibilité) : VP / (VP + FN), part des vrais positifs détectés.</div>
+        <div><strong>AUC-PR</strong> : aire sous la courbe précision-rappel, adaptée aux cibles rares.</div>
+      </div>
+
+      <div class="s1a-grid">
+        <table class="metrics" id="s1a-table">
+          <thead>
+            <tr><th>Modèle</th><th>Accuracy</th><th>Recall @ 0,5</th><th>AUC-PR</th></tr>
+          </thead>
+          <tbody id="s1a-tbody">
+            <tr><td>RL, classes équilibrées 50/50</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>RL, vraie prévalence 6,5 %</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>RF, vraie prévalence (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+          </tbody>
+        </table>
+        <div id="leucocytes-u"></div>
+      </div>
+
+      <div class="warn-card">
+        Le piège accuracy : un classifieur qui prédit « négatif » à tout le monde atteint déjà <strong>0,93</strong> d'accuracy en ignorant tous les patients positifs. L'accuracy ment quand la cible est rare.
+      </div>
+
+      <div class="phrase-cle-bas">
+        D'où vient ce mur ? De trois obstacles concrets qu'aucun des deux modèles ne lève entièrement.
+      </div>
+    </section>
+
+    <!-- ============================================== S1b ============================================== -->
+    <section class="slide" data-slide="S1b">
+      <h1>Trois obstacles cliniques, trois besoins méthodologiques.</h1>
+      <div class="phrase-cle-haut">Le sepsis-NFS pose trois problèmes différents. XGBoost en règle un par levier paramétrique.</div>
+      <div class="obstacles-3panels" id="obstacles-3panels"></div>
+      <div class="phrase-cle-bas">
+        RL : aucun des trois levé. RF : un et demi. XGBoost : les trois. C'est ce qui justifie de « sortir le bazooka » ici, pas ailleurs.
+      </div>
+    </section>
+
+    <!-- ============================================== S2a ============================================== -->
+    <section class="slide" data-slide="S2a">
+      <h1>Quand sortir XGBoost, quand s'abstenir.</h1>
+      <div class="phrase-cle-haut">XGBoost n'est pas une réponse par défaut. C'est une réponse à un profil de problème précis.</div>
+      <table class="compare">
+        <thead>
+          <tr><th>XGBoost est adapté quand...</th><th>XGBoost n'est PAS le bon choix quand...</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Données tabulaires (lignes × colonnes)</td><td>Images, texte, audio (deep learning)</td></tr>
+          <tr><td>Relations non linéaires, interactions entre variables</td><td>Relations linéaires propres (RL suffit)</td></tr>
+          <tr><td>Données manquantes structurelles</td><td>Dataset très propre et complet</td></tr>
+          <tr><td>Classes déséquilibrées</td><td>Besoin d'interprétabilité forte et simple</td></tr>
+          <tr><td>Taille moyenne (10³ à 10⁶ observations)</td><td>Très petits jeux (&lt; 300 obs)</td></tr>
+          <tr><td>Pas d'a priori sur la forme des relations</td><td>Visée d'inférence causale, pas prédictive</td></tr>
+        </tbody>
+      </table>
+      <div class="phrase-cle-bas">
+        Le sepsis-NFS coche les 5 premières conditions. Et c'est ce qui m'interdit de prétendre que XGBoost est partout la bonne réponse.
+      </div>
+    </section>
+
+    <!-- ============================================== S2b ============================================== -->
+    <section class="slide" data-slide="S2b">
+      <h1 style="font-size:38px;">Le choix de la métrique n'est pas technique, il est clinique.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        En sepsis, un faux négatif tue. Une fausse alerte coûte une hémoculture. Le rapport de gravité dicte la métrique.
+      </div>
+      <div id="trp-s2b" class="anim-anchor"></div>
+      <div class="phrase-cle-bas">
+        On pilote au recall et à l'AUC-PR. L'accuracy ne s'occupe pas du sort des patients qu'elle rate.
+      </div>
+    </section>
+
+    <!-- ============================================== S3a ============================================== -->
+    <section class="slide" data-slide="S3a">
+      <h1 style="font-size:38px;">Bagging et boosting, deux philosophies opposées d'agrégation.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Le boosting ne moyenne pas des avis indépendants. Il construit une chaîne d'arbres où chacun corrige le précédent.
+      </div>
+      <div class="s3a-grid">
+        <div class="card">
+          <h2>Bagging (Random Forest)</h2>
+          <ul>
+            <li>Bootstrap indépendants (échantillonnage avec remise)</li>
+            <li>Sous-échantillonnage aléatoire des variables à chaque split</li>
+            <li>Arbres entraînés en parallèle</li>
+            <li>Prédiction : vote majoritaire ou moyenne</li>
+            <li>Réduit la <strong>variance</strong></li>
+          </ul>
+        </div>
+        <div class="card teal-border">
+          <h2>Boosting (XGBoost)</h2>
+          <ul>
+            <li>Arbres entraînés en <strong>série</strong></li>
+            <li>Chaque arbre se concentre sur les erreurs du précédent</li>
+            <li>Prédiction : somme pondérée des arbres</li>
+            <li>Réduit le <strong>biais</strong></li>
+          </ul>
+        </div>
+      </div>
+      <div id="bagging-boosting-schema" style="margin-top:14px; min-height:120px;"></div>
+      <div class="phrase-cle-bas">
+        Sur le sepsis, le bagging plafonne parce qu'aucun arbre individuel ne sait quoi faire des cas rares mal classés. Le boosting force la chaîne à se concentrer dessus.
+      </div>
+    </section>
+
+    <!-- ============================================== S3b ============================================== -->
+    <section class="slide" data-slide="S3b">
+      <h1>Le gradient boosting apprend la suite des résidus.</h1>
+      <div class="phrase-cle-haut">
+        Chaque arbre ne réapprend pas le problème. Il apprend juste ce que le précédent n'a pas su faire.
+      </div>
+      <div class="formula-box">
+        F<sub>m+1</sub>(x) = F<sub>m</sub>(x) + η · h<sub>m+1</sub>(x)
+        <div class="formula-note">avec h<sub>m+1</sub> entraîné à prédire <code>−∂L / ∂F</code> (gradient négatif de la loss). Résidu = écart entre vérité et prédiction courante.</div>
+      </div>
+      <div id="residuals-evolution" class="residuals-evolution"></div>
+      <div class="phrase-cle-bas">
+        Friedman 1999 : c'est équivalent à une descente de gradient dans l'espace des fonctions. D'où le nom « gradient boosting ».
+      </div>
+    </section>
+
+    <!-- ============================================== S3c ============================================== -->
+    <section class="slide" data-slide="S3c">
+      <h1 style="font-size:38px;">Learning rate, régularisation, early stopping, la discipline du boosting.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Sans discipline, le boosting peut tout retenir, bruit inclus. Trois leviers tracent la limite.
+      </div>
+      <div class="s3c-stack">
+        <div class="card teal-border">
+          <h2>1. Learning rate η</h2>
+          <p>Facteur multiplicatif appliqué à chaque nouvel arbre quand il est ajouté à la somme. Plage 0,01 (lent et robuste) à 0,3 (rapide et instable). Petit η et beaucoup d'arbres = plus robuste qu'un grand η et peu d'arbres.</p>
+          <p class="card-tag">Sepsis : <strong>η = 0,05</strong></p>
+        </div>
+        <div class="card teal-border">
+          <h2>2. Régularisation L1 (α) et L2 (λ) sur les feuilles</h2>
+          <p>L1 pénalise la magnitude, pousse certains poids à zéro (feuilles muettes). L2 pénalise le carré, évite les feuilles à valeurs extrêmes. Limite la sur-confiance d'un arbre individuel.</p>
+          <p class="card-tag">Sepsis : <strong>λ = 1, α = 0</strong></p>
+        </div>
+        <div class="card teal-border">
+          <h2>3. Early stopping</h2>
+          <p>Arrêter l'ajout d'arbres si la loss de validation ne progresse plus depuis N rounds. Trouve le nombre optimal d'arbres sans validation croisée externe.</p>
+          <p class="card-tag">Sepsis : <strong>early_stopping_rounds = 30, max_trees = 500</strong></p>
+        </div>
+      </div>
+      <div class="phrase-cle-bas">
+        Trois leviers indépendants qui marchent ensemble. C'est la combinaison qui tient, pas chaque pièce isolément.
+      </div>
+    </section>
+
+    <!-- ============================================== S3d ============================================== -->
+    <section class="slide" data-slide="S3d">
+      <h1>Les valeurs manquantes, XGBoost apprend où les envoyer.</h1>
+      <div class="phrase-cle-haut">
+        Pas de moyenne, pas de médiane, pas de kNN. À chaque nœud, le modèle apprend une direction par défaut pour les NaN.
+      </div>
+      <div id="nan-default-direction" style="margin-top:24px;"></div>
+      <div class="phrase-cle-bas">
+        Pour la NFS, où VPM ou RDW manquent selon l'analyseur, c'est un avantage net. Pas d'imputation, donc pas de biais d'imputation.
+      </div>
+    </section>
+
+    <!-- ============================================== S3e ============================================== -->
+    <section class="slide" data-slide="S3e">
+      <h1><code>scale_pos_weight</code>, la réponse paramétrique au déséquilibre.</h1>
+      <div class="phrase-cle-haut">
+        Le ratio négatifs sur positifs dans la cohorte devient directement le poids appliqué au gradient de la classe positive.
+      </div>
+      <div class="defs-box">
+        <div><strong>scale_pos_weight</strong> : hyperparamètre XGBoost qui multiplie le gradient (et la perte) des observations positives. Équilibre artificiel des classes pendant l'apprentissage, sans rééchantillonner.</div>
+      </div>
+      <div class="s3e-grid">
+        <div class="formula-box">
+          <span id="s3e-spw-formula">scale_pos_weight ≈ ?</span>
+          <div class="formula-note">ratio négatifs / positifs ≈ 93,5 / 6,5 sur le train stratifié</div>
+        </div>
+        <ul class="bullets">
+          <li>Chaque erreur sur un positif compte environ <span id="s3e-spw-inline">15</span> fois plus dans la loss.</li>
+          <li>Le modèle voit le problème comme s'il était quasi équilibré.</li>
+          <li>Pas de SMOTE, pas de sous-échantillonnage destructif.</li>
+        </ul>
+      </div>
+      <table class="metrics s3e-compare">
+        <thead>
+          <tr><th>Stratégie</th><th>Mécanisme</th><th>Inconvénient principal</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Sous-échantillonnage des négatifs</td><td>jeter des observations</td><td>perd de l'information sur la classe majoritaire</td></tr>
+          <tr><td>SMOTE</td><td>synthétiser des positifs artificiels</td><td>fragile en clinique, suspicion réglementaire</td></tr>
+          <tr><td>Ajustement post-hoc du seuil</td><td>déplacer le seuil de décision</td><td>indépendant du modèle, à combiner</td></tr>
+          <tr class="row-highlight"><td><strong>scale_pos_weight</strong></td><td>reweighting du gradient à l'apprentissage</td><td>augmente le risque de surapprentissage</td></tr>
+        </tbody>
+      </table>
+      <div class="phrase-cle-bas">
+        C'est UNE des stratégies, pas LA solution. Conscience requise : <code>scale_pos_weight</code> surajuste plus facilement, validation impérative.
+      </div>
+    </section>
+
+    <!-- ============================================== S4a ============================================== -->
+    <section class="slide" data-slide="S4a">
+      <h1>XGBoost sur la cohorte simulée, les chiffres.</h1>
+      <div class="phrase-cle-haut">
+        Pas un saut de discrimination globale, un saut de rappel.
+      </div>
+      <div class="s4a-grid">
+        <table class="metrics" id="s4a-table">
+          <thead>
+            <tr><th>Modèle</th><th>AUC-ROC</th><th>AUC-PR</th><th>Recall @ 0,5</th><th>Precision @ 0,5</th></tr>
+          </thead>
+          <tbody id="s4a-tbody">
+            <tr><td>RL prévalence réelle (naïve)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>Random Forest (class_weight)</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+            <tr><td>XGBoost</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+          </tbody>
+        </table>
+        <div class="callout-teal">
+          <strong>Lecture honnête.</strong><br>
+          AUC-ROC : XGB au coude à coude avec RF.<br>
+          AUC-PR : quasi équivalents.<br>
+          Recall @ 0,5 : crescendo net 0,03 puis 0,65 puis 0,73. Le gain XGBoost est sur la sensibilité.
+        </div>
+      </div>
+      <div class="phrase-cle-bas">
+        Le gain XGBoost n'est pas dans la discrimination, il est dans la sensibilité à seuil égal. C'est exactement ce qu'on veut en sepsis.
+      </div>
+    </section>
+
+    <!-- ============================================== S4b ============================================== -->
+    <section class="slide" data-slide="S4b">
+      <h1 style="font-size:38px;">Abaisser le seuil de 0,5 à 0,3, un arbitrage clinique.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
+        Combien de fausses alertes est-on prêt à accepter pour récupérer <strong>une dizaine de sepsis manqués supplémentaires</strong> sur 100 vrais positifs ?
+      </div>
+      <div id="trp-s4b" class="anim-anchor"></div>
+      <div class="phrase-cle-bas" style="font-size:15px;">
+        Cette décision n'est pas la mienne. C'est celle du clinicien et du service. Le modèle doit la rendre <strong>visible</strong> et <strong>chiffrable</strong>.
+      </div>
+    </section>
+
+    <!-- ============================================== S5a ============================================== -->
+    <section class="slide" data-slide="S5a">
+      <h1 style="font-size:38px;">SHAP, expliquer chaque prédiction individuellement.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
+        <strong>SHAP</strong> (SHapley Additive exPlanations) répond à « <em>pourquoi le modèle a sorti CETTE prédiction pour CE patient ?</em> ». Il décompose chaque prédiction en contributions chiffrées par variable.
+      </div>
+      <div class="defs-box">
+        <div><strong>Origine</strong> : valeur de Shapley (Lloyd Shapley, théorie des jeux, 1953), part équitable d'un joueur dans un gain collectif, moyennée sur tous les ordres d'arrivée possibles.</div>
+        <div><strong>Adaptée au ML</strong> (Lundberg et Lee, 2017) : joueurs = variables, gain = prédiction. La valeur SHAP φᵢ d'une variable est sa contribution à l'écart entre la prédiction de cette instance et la prédiction moyenne du modèle.</div>
+      </div>
+      <div class="formula-box">
+        f(x) = E[f(x)] + Σᵢ φᵢ(x)
+        <div class="formula-note">identité fondamentale : la prédiction = la moyenne plus la somme des contributions SHAP.</div>
+      </div>
+      <div class="s5a-grid">
+        <div class="card teal-border">
+          <h2>SHAP fait</h2>
+          <ul>
+            <li>Explique une prédiction individuelle (locale)</li>
+            <li>S'agrège en importance globale (moyenne des |φᵢ|)</li>
+            <li>Détecte des dépendances suspectes</li>
+            <li>Permet d'auditer un modèle après coup</li>
+          </ul>
+        </div>
+        <div class="card brick-border">
+          <h2>SHAP NE fait PAS</h2>
+          <ul>
+            <li>N'améliore PAS la prédiction</li>
+            <li>N'équilibre PAS les classes (c'est <code>scale_pos_weight</code> ou rééchantillonnage)</li>
+            <li>Ne fait PAS d'inférence causale</li>
+            <li>Ne corrige PAS un biais, il le <strong>révèle</strong></li>
+          </ul>
+        </div>
+        <div id="shapley-30s" class="shapley-vignette"></div>
+      </div>
+      <div class="phrase-cle-bas">
+        SHAP est un microscope, pas un correcteur. Il dit ce que le modèle a appris, pas si c'est juste.
+      </div>
+    </section>
+
+    <!-- ============================================== S5b ============================================== -->
+    <section class="slide" data-slide="S5b">
+      <h1 style="font-size:38px;">Le modèle redécouvre la sémiologie infectieuse, et le U se reconfirme.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Beeswarm : chaque point un patient, chaque ligne une variable, la couleur encode la valeur. La position horizontale = contribution SHAP.
+      </div>
+      <div class="s5b-grid">
+        <div class="s5b-col">
+          <div class="s5b-col-title">Beeswarm global (top variables)</div>
+          <div id="shap-beeswarm" class="anim-anchor"></div>
+          <div class="s5b-legend">
+            NLR élevé, lymphopénie, éosinopénie, myélémie : tous poussent vers « bactériémie ». Le modèle redécouvre la sémiologie infectieuse de la NFS.
+          </div>
+        </div>
+        <div class="s5b-col">
+          <div class="s5b-col-title">Dependence plot, leucocytes</div>
+          <div id="shap-dependence-leuco" class="anim-anchor"></div>
+          <div class="s5b-legend">
+            Forme en U : contribution SHAP positive aux deux extrêmes. C'est exactement le U identifié en S1a, le modèle l'a bien appris.
+          </div>
+        </div>
+      </div>
+      <div class="phrase-cle-bas">
+        Le modèle redécouvre la clinique. Bon signe, mais pas suffisant pour le valider.
+      </div>
+    </section>
+
+    <!-- ============================================== S5c ============================================== -->
+    <section class="slide" data-slide="S5c">
+      <h1 style="font-size:38px;">Waterfall d'un patient à risque très élevé, NLR, lymphopénie, et un intrus.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Le modèle attribue une probabilité de bactériémie proche de <span id="s5c-prob">1</span> à ce patient. Décomposons la prédiction variable par variable.
+      </div>
+      <div class="s5c-grid">
+        <div class="s5c-col">
+          <div id="shap-waterfall" class="anim-anchor"></div>
+        </div>
+        <div class="s5c-col">
+          <div class="warn-card">
+            <strong>La variable suspecte.</strong><br>
+            <code>mode_Hospitalisé</code> contribue positivement à la prédiction.<br><br>
+            Question : signal biologique, ou proxy de sévérité du patient ?<br><br>
+            Réponse : c'est un proxy. Un patient hospitalisé est par construction déjà jugé sévère par un clinicien. La variable « marche » statistiquement, mais elle reflète une indication clinique préalable, pas une physiopathologie.
+          </div>
+          <div class="callout-teal callout-large">
+            <strong>Corrélation n'est pas causalité.</strong> La variable « mode de prise en charge » prédit, mais elle ne cause pas. Si on l'utilise comme critère, on risque d'amplifier une inégalité : les patients déjà mieux ressourcés (suivi à domicile, moins sévères, mieux entourés) seraient déprioritisés.
+          </div>
+        </div>
+      </div>
+      <div class="phrase-cle-bas">
+        SHAP révèle. Le clinicien décide. La question n'est pas technique, elle est éthique.
+      </div>
+    </section>
+
+    <!-- ============================================== SC ============================================== -->
+    <section class="slide" data-slide="SC">
+      <h1>Performance OU équité ? Le dernier mot revient au clinicien.</h1>
+      <div class="phrase-cle-haut" style="font-size:26px;">
+        Un modèle plus performant qui s'appuie sur une variable potentiellement biaisante est-il acceptable ?
+      </div>
+      <table class="recap" style="margin-top:32px;">
+        <thead>
+          <tr><th>Piège</th><th>Réponse de l'exposé</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Déséquilibre 6,5 %</td><td>Stratégie consciente : scale_pos_weight et ajustement du seuil</td></tr>
+          <tr><td>Variable sociale</td><td>Révélée par SHAP, à interroger systématiquement</td></tr>
+          <tr><td>Choix de la métrique</td><td>Décision <strong>clinique</strong>, on pilote au recall et à l'AUC-PR</td></tr>
+          <tr><td>Ce que SHAP fait</td><td>Explique, <strong>ne corrige ni n'équilibre</strong></td></tr>
+          <tr><td>Performance vs équité</td><td>Arbitrage clinique, pas technique</td></tr>
+        </tbody>
+      </table>
+      <div class="callout-teal" style="margin-top:24px; font-size:18px;">
+        <em>« Ne pas faire d'IA à tout prix. »</em> Le notebook XGBoost n'est qu'un prétexte. Le vrai sujet est le discernement critique.
+      </div>
+    </section>
+
+    <!-- ============================================== S_REAL ============================================== -->
+    <section class="slide" data-slide="S_REAL">
+      <h1 style="font-size:38px;">Validation sur données réelles, sbcdata Leipzig (744 205 patients).</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
+        Pipeline rejoué tel quel sur les données réelles. La narration tient, et le piège s'aggrave.
+      </div>
+
+      <div class="real-grid">
+        <div>
+          <table class="metrics" style="margin-top:6px;">
+            <thead>
+              <tr><th>Métrique</th><th>Simulé (20 000)</th><th>sbcdata Leipzig</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Prévalence sepsis</td><td class="num">6,5 %</td><td class="num highlight">1,4 %</td></tr>
+              <tr><td>scale_pos_weight</td><td class="num">15</td><td class="num highlight">72</td></tr>
+              <tr><td>RL naïve recall @ 0,5</td><td class="num">0,03</td><td class="num">0,10</td></tr>
+              <tr><td>RL naïve accuracy @ 0,5</td><td class="num">0,93</td><td class="num highlight-brick">0,99</td></tr>
+              <tr><td>RF balanced recall @ 0,5</td><td class="num">0,65</td><td class="num">0,86</td></tr>
+              <tr><td>XGBoost recall @ 0,5</td><td class="num">0,73</td><td class="num highlight">0,88</td></tr>
+              <tr><td>XGBoost AUC-ROC</td><td class="num">0,91</td><td class="num highlight">0,95</td></tr>
+              <tr><td>XGBoost AUC-PR</td><td class="num">0,56</td><td class="num">0,30</td></tr>
+            </tbody>
+          </table>
+          <div class="src-note">
+            Source : Steinbach et al. 2024, <em>Clin. Chem.</em> 70(3):506, DOI 10.1093/clinchem/hvae001. Cohorte 2014 à 2019, CC BY 4.0.
+          </div>
+        </div>
+
+        <div class="real-side">
+          <div class="callout-teal" style="font-size:14px;">
+            <strong>Ce qui tient.</strong><br>
+            • Piège accuracy plus violent : 0,99 d'accuracy avec un recall de 0,10.<br>
+            • Crescendo recall : 0,03 → 0,86 → 0,88 (RF naïf, RF balanced, XGBoost).<br>
+            • XGBoost garde un léger edge en AUC-ROC.<br>
+            • La stratégie de rééquilibrage reste la vraie ligne de fracture.
+          </div>
+          <div class="warn-card" style="font-size:14px;">
+            <strong>Ce qui change.</strong><br>
+            • 5 variables NFS seulement (WBC, HGB, PLT, RBC, MCV) au lieu de 11 (pas de NLR, RDW, différentielle leucocytaire).<br>
+            • Cible = sepsis ICD-10, pas hémoculture positive.<br>
+            • Cohorte = tous les patients avec NFS, pas une suspicion de bactériémie.<br>
+            • Proxy social = <code>Sender</code> (ward d'origine, gradient massif réa → ambulatoire).
+          </div>
+        </div>
+      </div>
+
+      <div class="phrase-cle-bas">
+        L'enseignement central reste intact. Sans stratégie consciente sur le déséquilibre et la métrique, on rate quasiment tous les sepsis. Avec, XGBoost devient compétitif et auditable via SHAP.
+      </div>
+    </section>
+
+    <!-- ============================================== SBONUS ============================================== -->
+    <section class="slide" data-slide="SBONUS">
+      <h1 style="font-size:38px;">Pour rejouer ce pipeline sur des données réelles.</h1>
+      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
+        Notre cohorte est simulée. Voici deux sources publiques, téléchargeables sans credentialing, pour répliquer la démarche.
+      </div>
+
+      <div class="bonus-grid">
+        <div class="card teal-border">
+          <h2>sbcdata, Steinbach et al. 2024</h2>
+          <ul>
+            <li><strong>528 000 patients</strong> (Leipzig, Greifswald, 2014 à 2021)</li>
+            <li>NFS minimale : Hb, plaquettes, MCV, RBC, WBC + âge, sexe</li>
+            <li>Label : sepsis ICD-10</li>
+            <li>Licence : CC BY 4.0, aucun credentialing</li>
+            <li class="link">DOI <code>10.5281/zenodo.10781419</code></li>
+            <li class="link">Article : <em>Clin. Chem.</em> 70(3):506</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>PhysioNet Challenge 2019</h2>
+          <ul>
+            <li><strong>40 336 patients</strong> (Beth Israel + Emory, US)</li>
+            <li>Vitaux + biochimie + NFS partielle (WBC, Hb, Plt, Hct)</li>
+            <li>Label : Sepsis-3 (SOFA et suspicion d'infection)</li>
+            <li>Licence : CC BY 4.0, compte PhysioNet immédiat</li>
+            <li class="link"><code>physionet.org/content/challenge-2019/1.0.0/</code></li>
+            <li class="link">Article : Reyna et al. <em>Crit. Care Med.</em> 2020</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="warn-card" style="margin-top:18px;">
+        <strong>Ajustements à prévoir.</strong> Pas de différentielle leucocytaire (neutro, lympho, éosino) dans ces deux sources. Le label diffère (ICD-10 ou Sepsis-3, pas hémoculture+ directe). Pas de variable « mode de prise en charge ». Pour répliquer le piège #2 (proxy social), il faudrait MIMIC-IV qui demande un credentialing PhysioNet de 5 à 14 jours.
+      </div>
+
+      <div class="phrase-cle-bas">
+        Le pipeline est portable. La narration éthique demande une variable de contexte clinique, à choisir avec soin dans le dataset cible.
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="deck-roadmap" aria-label="Plan de la présentation">
+    <span data-section="opening">OUVERTURE</span><span class="sep">/</span>
+    <span data-section="why">WHY</span><span class="sep">/</span>
+    <span data-section="when">WHEN</span><span class="sep">/</span>
+    <span data-section="how-theorie">HOW théorie</span><span class="sep">/</span>
+    <span data-section="how-cas">HOW cas</span><span class="sep">/</span>
+    <span data-section="how-interp">HOW interpréter et critiquer</span><span class="sep">/</span>
+    <span data-section="closing">CONCLUSION</span>
+  </nav>
+
+  <nav class="deck-nav" aria-label="Navigation du deck">
+    <button id="prev" aria-label="Slide précédente">←</button>
+    <span id="counter">01 / 01</span>
+    <button id="next" aria-label="Slide suivante">→</button>
+  </nav>
+
+  <script src="assets/js/data-loader.js" defer></script>
+  <script src="assets/js/animations/obstacles-3panels.js" defer></script>
+  <script src="assets/js/animations/nan-default-direction.js" defer></script>
+  <script src="assets/js/animations/leucocytes-u.js" defer></script>
+  <script src="assets/js/animations/bagging-vs-boosting.js" defer></script>
+  <script src="assets/js/animations/residuals-evolution.js" defer></script>
+  <script src="assets/js/animations/shapley-30s.js" defer></script>
+  <script src="assets/js/animations/beeswarm.js" defer></script>
+  <script src="assets/js/animations/dependence-leucocytes.js" defer></script>
+  <script src="assets/js/animations/waterfall-patient.js" defer></script>
+  <script src="assets/js/animations/threshold-roc-pr.js" defer></script>
+  <script src="assets/js/slide-resizer.js" defer></script>
+  <script src="assets/js/deck-navigation.js" defer></script>
+
+  <script>
+    // Helpers
+    function fmt2(n) {
+      if (n === null || n === undefined || Number.isNaN(n)) return '–';
+      return Number(n).toFixed(2).replace('.', ',');
+    }
+
+    function mountOnce(target, fn) {
+      if (!target || target.dataset.mounted === '1') return;
+      fn(target);
+      target.dataset.mounted = '1';
+    }
+
+    // ---- Data-driven population ---------------------------------------------------------------
+    function populateS1a(data) {
+      const m = data && data.metrics;
+      if (!m) return;
+      const tbody = document.getElementById('s1a-tbody');
+      if (!tbody) return;
+      const rl_eq = m.rl_equilibre || {};
+      const rl_naive = m.rl_reel_naive || m.rl_reel || {};
+      const rf = m.rf_balanced || m.rf || {};
+      const recall = obj => (obj && obj.at_50 && obj.at_50.recall != null) ? obj.at_50.recall : null;
+      const accuracy = obj => (obj && obj.at_50 && obj.at_50.accuracy != null) ? obj.at_50.accuracy : null;
+      tbody.innerHTML = `
+        <tr>
+          <td>RL, classes équilibrées 50/50</td>
+          <td class="num">${fmt2(accuracy(rl_eq))}</td>
+          <td class="num">${fmt2(recall(rl_eq))}</td>
+          <td class="num">${fmt2(rl_eq.auc_pr)}</td>
+        </tr>
+        <tr>
+          <td>RL, vraie prévalence 6,5 % (naïve)</td>
+          <td class="num">${fmt2(accuracy(rl_naive))}</td>
+          <td class="num highlight-brick">${fmt2(recall(rl_naive))}</td>
+          <td class="num">${fmt2(rl_naive.auc_pr)}</td>
+        </tr>
+        <tr>
+          <td>RF, vraie prévalence (class_weight)</td>
+          <td class="num">${fmt2(accuracy(rf))}</td>
+          <td class="num highlight">${fmt2(recall(rf))}</td>
+          <td class="num">${fmt2(rf.auc_pr)}</td>
+        </tr>
+      `;
+    }
+
+    function populateS3e(data) {
+      const spw = data && data.scale_pos_weight;
+      if (!spw) return;
+      const v = Math.round(spw);
+      const fEl = document.getElementById('s3e-spw-formula');
+      const iEl = document.getElementById('s3e-spw-inline');
+      if (fEl) fEl.textContent = 'scale_pos_weight ≈ ' + v;
+      if (iEl) iEl.textContent = String(v);
+    }
+
+    function populateS4a(data) {
+      const m = data && data.metrics;
+      if (!m) return;
+      const tbody = document.getElementById('s4a-tbody');
+      if (!tbody) return;
+      const rl_naive = m.rl_reel_naive || m.rl_reel || {};
+      const rf = m.rf_balanced || m.rf || {};
+      const xgb = m.xgb || {};
+      const recall50 = obj => (obj && obj.at_50 && obj.at_50.recall != null) ? obj.at_50.recall : null;
+      const prec50   = obj => (obj && obj.at_50 && obj.at_50.precision != null) ? obj.at_50.precision : null;
+      const rows = [
+        ['RL prévalence réelle (naïve)', rl_naive, false],
+        ['Random Forest (class_weight)', rf, false],
+        ['XGBoost',                       xgb, true],
+      ];
+      tbody.innerHTML = rows.map(([name, x, hl]) => `
+        <tr>
+          <td>${name}</td>
+          <td class="num">${fmt2(x.auc_roc)}</td>
+          <td class="num">${fmt2(x.auc_pr)}</td>
+          <td class="num ${hl ? 'highlight' : ''}">${fmt2(recall50(x))}</td>
+          <td class="num">${fmt2(prec50(x))}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateS5c(data) {
+      const w = data && data.shap_waterfall_patient_99pct;
+      if (!w) return;
+      const p = w.final_prob;
+      if (p != null) {
+        const el = document.getElementById('s5c-prob');
+        if (el) el.textContent = fmt2(p);
+      }
+    }
+
+    // Populate dès que la data est prête (3 stratégies pour gérer le timing inline vs defer)
+    function runAllPopulates(data) {
+      populateS1a(data);
+      populateS3e(data);
+      populateS4a(data);
+      populateS5c(data);
+    }
+    if (window.deckData) {
+      runAllPopulates(window.deckData);
+    } else if (window.deckDataReady && typeof window.deckDataReady.then === 'function') {
+      window.deckDataReady.then(runAllPopulates).catch(() => {});
+    } else {
+      document.addEventListener('deckdataready', function once(e) {
+        document.removeEventListener('deckdataready', once);
+        runAllPopulates(e.detail);
+      });
+    }
+
+    // ---- Roadmap persistante --------------------------------------------------------------
+    // Mappe chaque slide à sa section. Le bloc roadmap est positionné en fixe (CSS).
+    const ROADMAP_SECTIONS = ['opening', 'why', 'when', 'how-theorie', 'how-cas', 'how-interp', 'closing'];
+    const SLIDE_TO_SECTION = {
+      'S0':  'opening',   'S0b': 'opening',
+      'S1a': 'why',       'S1b': 'why',
+      'S2a': 'when',      'S2b': 'when',
+      'S3a': 'how-theorie', 'S3b': 'how-theorie', 'S3c': 'how-theorie', 'S3d': 'how-theorie', 'S3e': 'how-theorie',
+      'S4a': 'how-cas',   'S4b': 'how-cas',
+      'S5a': 'how-interp','S5b': 'how-interp','S5c': 'how-interp',
+      'SC':  'closing',   'SBONUS': 'closing',
+    };
+    function updateRoadmap(slideKey) {
+      const section = SLIDE_TO_SECTION[slideKey] || 'opening';
+      const idx = ROADMAP_SECTIONS.indexOf(section);
+      document.querySelectorAll('.deck-roadmap span[data-section]').forEach(el => {
+        const sec = el.dataset.section;
+        const i = ROADMAP_SECTIONS.indexOf(sec);
+        el.classList.remove('active', 'done');
+        if (i < idx) el.classList.add('done');
+        else if (i === idx) el.classList.add('active');
+      });
+    }
+    document.addEventListener('slidechange', e => {
+      const slide = e.detail && e.detail.slide;
+      if (slide) updateRoadmap(slide.dataset.slide);
+    });
+    // État initial
+    updateRoadmap('S0');
+
+    // ---- slidechange : animations ------------------------------------------------------------
+    document.addEventListener('slidechange', async e => {
+      const slide = e.detail.slide;
+      if (!slide) return;
+      const s = slide.dataset.slide;
+
+      // S1a : leucocytes U
+      if (s === 'S1a' && window.mountLeucocytesU) {
+        const target = document.getElementById('leucocytes-u');
+        mountOnce(target, t => window.mountLeucocytesU(t));
+      }
+
+      // S1b : obstacles
+      if (s === 'S1b' && window.mountObstacles3Panels) {
+        const target = document.getElementById('obstacles-3panels');
+        mountOnce(target, t => window.mountObstacles3Panels(t));
+      }
+
+      // S2b : threshold ROC PR (init 0.5)
+      if (s === 'S2b') {
+        const target = document.getElementById('trp-s2b');
+        if (target && target.dataset.mounted !== '1' && window.mountThresholdRocPR) {
+          try {
+            await window.deckDataReady;
+            window.mountThresholdRocPR(target, window.deckData, 0.5);
+            target.dataset.mounted = '1';
+          } catch (err) { console.error('[S2b] mount failed', err); }
+        }
+      }
+
+      // S3a : bagging vs boosting
+      if (s === 'S3a' && window.mountBaggingVsBoosting) {
+        const target = document.getElementById('bagging-boosting-schema');
+        mountOnce(target, t => window.mountBaggingVsBoosting(t));
+      }
+
+      // S3b : residuals evolution (data-driven)
+      if (s === 'S3b') {
+        const target = document.getElementById('residuals-evolution');
+        if (target && target.dataset.mounted !== '1' && window.mountResidualsEvolution) {
+          try {
+            await window.deckDataReady;
+            window.mountResidualsEvolution(target, window.deckData);
+            target.dataset.mounted = '1';
+          } catch (err) { console.error('[S3b] mount failed', err); }
+        }
+      }
+
+      // S3d : NaN default direction
+      if (s === 'S3d' && window.mountNanDefaultDirection) {
+        const target = document.getElementById('nan-default-direction');
+        mountOnce(target, t => window.mountNanDefaultDirection(t));
+      }
+
+      // S4b : threshold ROC PR (init 0.3)
+      if (s === 'S4b') {
+        const target = document.getElementById('trp-s4b');
+        if (target && target.dataset.mounted !== '1' && window.mountThresholdRocPR) {
+          try {
+            await window.deckDataReady;
+            window.mountThresholdRocPR(target, window.deckData, 0.3);
+            target.dataset.mounted = '1';
+          } catch (err) { console.error('[S4b] mount failed', err); }
+        }
+      }
+
+      // S5a : Shapley 30s
+      if (s === 'S5a' && window.mountShapley30s) {
+        const target = document.getElementById('shapley-30s');
+        mountOnce(target, t => window.mountShapley30s(t));
+      }
+
+      // S5b : beeswarm + dependence
+      if (s === 'S5b') {
+        const tBee = document.getElementById('shap-beeswarm');
+        const tDep = document.getElementById('shap-dependence-leuco');
+        try {
+          await window.deckDataReady;
+          if (tBee && tBee.dataset.mounted !== '1' && window.mountBeeswarm) {
+            window.mountBeeswarm(tBee, window.deckData);
+            tBee.dataset.mounted = '1';
+          }
+          if (tDep && tDep.dataset.mounted !== '1' && window.mountDependenceLeucocytes) {
+            window.mountDependenceLeucocytes(tDep, window.deckData);
+            tDep.dataset.mounted = '1';
+          }
+        } catch (err) { console.error('[S5b] mount failed', err); }
+      }
+
+      // S5c : waterfall
+      if (s === 'S5c') {
+        const target = document.getElementById('shap-waterfall');
+        if (target && target.dataset.mounted !== '1' && window.mountWaterfallPatient) {
+          try {
+            await window.deckDataReady;
+            window.mountWaterfallPatient(target, window.deckData);
+            target.dataset.mounted = '1';
+          } catch (err) { console.error('[S5c] mount failed', err); }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
