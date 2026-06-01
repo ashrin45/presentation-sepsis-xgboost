@@ -84,17 +84,32 @@
       ? '<line x1="' + x(0) + '" y1="' + y(baselineY) + '" x2="' + x(1) + '" y2="' + y(baselineY) + '" stroke="' + MUTED + '" stroke-width="1" stroke-dasharray="3,3"/>' +
         '<text x="' + (x(1) - 2) + '" y="' + (y(baselineY) - 3) + '" text-anchor="end" font-family="' + MONO + '" font-size="7" fill="' + MUTED + '">hasard ' + (baselineY * 100).toFixed(1) + '%</text>'
       : '';
-    // Annotation près du point op (ex: "1 / 7 alertes" pour la PR)
+    // Annotation près du point op (ex: "1 / 7" pour la PR)
+    // Affichée comme un badge blanc avec contour brique pour rester lisible
+    // même quand le point est sur la courbe.
     let annot = '';
     if (annotation) {
       const px = x(op[xKey]);
       const py = y(op[yKey]);
       const right = px < (padL + innerW / 2);
-      const above = py > (padT + innerH * 0.35);
-      const tx = right ? px + 8 : px - 8;
-      const ty = above ? py - 6 : py + 14;
+      const tx = right ? px + 12 : px - 12;
+      const ty = py - 4;
       const anchor = right ? 'start' : 'end';
-      annot = '<text x="' + tx + '" y="' + ty + '" text-anchor="' + anchor + '" font-family="' + MONO + '" font-size="9" font-weight="700" fill="' + BRICK + '">' + annotation + '</text>';
+      const padX = 4, padY = 2;
+      const charW = 6.2;
+      const txtW = annotation.length * charW;
+      const rectX = anchor === 'start' ? tx - padX : tx - txtW - padX;
+      const rectY = ty - 10;
+      const rectW = txtW + padX * 2;
+      const rectH = 14;
+      annot =
+        '<rect x="' + rectX.toFixed(1) + '" y="' + rectY.toFixed(1) +
+        '" width="' + rectW.toFixed(1) + '" height="' + rectH +
+        '" fill="#FFFFFF" stroke="' + BRICK + '" stroke-width="1" rx="3"/>' +
+        '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) +
+        '" text-anchor="' + anchor + '" font-family="' + MONO +
+        '" font-size="10" font-weight="700" fill="' + BRICK + '">' +
+        annotation + '</text>';
     }
     const ticks = [0, 0.5, 1];
     const xTicks = ticks.map(t =>
