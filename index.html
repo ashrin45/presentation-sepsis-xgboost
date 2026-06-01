@@ -13,8 +13,18 @@
   <main class="deck">
 
     <!-- ============================================== S0 ============================================== -->
-    <section class="slide active" data-slide="S0">
-      <div class="byline">Ahmed Ashrin &middot; CNAM &middot; 01/06/2026</div>
+    <!-- ============================================== S_intro (titre) ============================================== -->
+    <section class="slide active title-slide" data-slide="S_intro">
+      <h1>XGBoost &amp; SHAP</h1>
+      <div class="title-subtitle">Détecter un sepsis avec une numération formule sanguine.</div>
+      <div class="title-meta">
+        <div class="title-author">Ahmed Ashrin</div>
+        CNAM &middot; 01/06/2026
+      </div>
+    </section>
+
+    <!-- ============================================== S0 ============================================== -->
+    <section class="slide" data-slide="S0">
       <h1>Détecter un sepsis avec une numération formule sanguine.</h1>
       <div class="subtitle">Cas clinique appliqué à XGBoost et SHAP.</div>
       <div class="phrase-cle-haut">
@@ -651,7 +661,7 @@
     // Mappe chaque slide à sa section. Le bloc roadmap est positionné en fixe (CSS).
     const ROADMAP_SECTIONS = ['opening', 'why', 'when', 'how-theorie', 'how-cas', 'how-interp', 'closing'];
     const SLIDE_TO_SECTION = {
-      'S0':  'opening',   'S0b': 'opening',
+      'S_intro': 'opening', 'S0':  'opening',   'S0b': 'opening',
       'S1a': 'why',       'S1b': 'why',
       'S2a': 'when',      'S2b': 'when',
       'S3a': 'how-theorie', 'S3b': 'how-theorie', 'S3c': 'how-theorie', 'S3d': 'how-theorie', 'S3e': 'how-theorie',

@@ -66,13 +66,38 @@ html, body {
   color: var(--muted);
   margin-top: 8px;
 }
-.slide .byline {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 12px;
+.slide.title-slide {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.slide.title-slide h1 {
+  font-size: 96px;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.slide.title-slide .title-subtitle {
+  font-size: 24px;
   color: var(--muted);
-  letter-spacing: 0.08em;
-  margin-bottom: 14px;
+  margin-top: 18px;
+  font-weight: 400;
+}
+.slide.title-slide .title-meta {
+  margin-top: 64px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.slide.title-slide .title-author {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 20px;
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .slide .phrase-cle-haut {
   font-weight: 400;
