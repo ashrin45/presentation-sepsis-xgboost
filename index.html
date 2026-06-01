@@ -190,6 +190,7 @@
       <div id="trp-s2b" class="anim-anchor"></div>
       <div class="callout-teal" style="margin-top:12px; font-size:14px;">
         <strong>Glissez le curseur de 0,50 à 0,30</strong> : recall 72 % → 87 % (+14 sepsis détectés sur 100 vrais positifs), précision 29 % → 15 % (3 fausses alertes pour 1 vrai positif au lieu de 2). Cette bascule n'est pas la mienne, c'est celle du service.
+        <span style="display:block;margin-top:8px;font-style:italic;font-size:13px;color:var(--muted);">La ROC reste flatteuse parce que les vrais négatifs (très nombreux) noient les fausses alertes au dénominateur de la spécificité. La PR ne triche pas : c'est pourquoi on pilote à l'AUC-PR.</span>
       </div>
       <div class="phrase-cle-bas" style="font-size:14px;">
         On pilote au recall et à l'AUC-PR. L'accuracy ne s'occupe pas du sort des patients qu'elle rate.
