@@ -166,17 +166,27 @@
       `;
     });
 
-    // Points (jittered)
+    // Hash pseudo-aléatoire stable (déterministe) dans [0,1)
+    function hash01(n) {
+      const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    // Points (jittered, distribution triangulaire centrée pour éviter les bandes vides)
     topIdx.forEach((featIdx, r) => {
       const yC = padT + r * rowH + rowH / 2;
       const lo = valMin[featIdx], hi = valMax[featIdx];
       const span = hi - lo || 1;
+      const amp = (rowH - 8) * 0.5;
       norm.rows.forEach((row, p) => {
         const sv = row.shap[featIdx];
         const vv = row.val[featIdx];
         if (typeof sv !== 'number' || !isFinite(sv)) return;
         const x = xAt(sv);
-        const jitter = (Math.sin(p * 13.37 + r) * 0.5) * (rowH - 8);
+        // somme de 2 uniformes = triangle centré sur 0, densité max au centre
+        const u1 = hash01(p * 1.1 + r * 7.3) - 0.5;
+        const u2 = hash01(p * 3.7 + r * 11.9) - 0.5;
+        const jitter = (u1 + u2) * amp;
         const y = yC + jitter;
         const t = typeof vv === 'number' && isFinite(vv) ? (vv - lo) / span : 0.5;
         svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"

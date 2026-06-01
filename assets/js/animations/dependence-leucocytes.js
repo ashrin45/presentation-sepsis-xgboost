@@ -42,10 +42,14 @@
       return;
     }
 
-    const xs = points.map(p => p.x);
+    // Cap visuel à 22 G/L : 95 % des patients sont sous ce seuil,
+    // la queue jusqu'à 40 G/L ne contient qu'une centaine d'outliers
+    // qui creusent un vide trompeur à droite. On les clippe et on indique le rebond.
+    const X_CAP = 22;
+    const nClipped = points.filter(p => p.x > X_CAP).length;
     const ys = points.map(p => p.y);
-    const xMin = Math.min(...xs);
-    const xMax = Math.max(...xs);
+    const xMin = 0;
+    const xMax = X_CAP;
     const yAbs = Math.max(...ys.map(Math.abs));
     const yMin = -yAbs, yMax = +yAbs;
 
@@ -69,13 +73,27 @@
     const yTicks = tickValues(yMin, yMax, 4);
 
     // Couleur des points : teal si SHAP < 0, brick si SHAP > 0, dégradé selon |y|
+    // Les outliers au-delà du X_CAP sont écrasés sur le bord droit, en plus pâle.
     const dots = points.map(p => {
       const t = Math.min(1, Math.abs(p.y) / (yAbs || 1));
       const color = p.y < 0 ? TEAL : BRICK;
-      const cx = xAt(p.x).toFixed(1);
+      const clipped = p.x > X_CAP;
+      const xUsed = clipped ? X_CAP : p.x;
+      const cx = xAt(xUsed).toFixed(1);
       const cy = yAt(p.y).toFixed(1);
-      return `<circle cx="${cx}" cy="${cy}" r="2.8" fill="${color}" opacity="${0.35 + 0.45 * t}"/>`;
+      const op = clipped ? 0.25 : (0.35 + 0.45 * t);
+      return `<circle cx="${cx}" cy="${cy}" r="2.8" fill="${color}" opacity="${op}"/>`;
     }).join('');
+
+    // Annotation des outliers clippés
+    const clipNote = nClipped > 0 ? `
+      <line x1="${xAt(X_CAP)}" y1="${padT}" x2="${xAt(X_CAP)}" y2="${padT + innerH}"
+            stroke="${MUTED}" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+      <text x="${padL + innerW - 6}" y="${padT + 12}" text-anchor="end"
+            font-family="Inter,sans-serif" font-size="9" font-style="italic" fill="${MUTED}">
+        + ${nClipped} patients > ${X_CAP} G/L (regroupés)
+      </text>
+    ` : '';
 
     container.innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
@@ -114,6 +132,9 @@
 
         <!-- Points -->
         ${dots}
+
+        <!-- Marqueur outliers clippés -->
+        ${clipNote}
 
         <!-- Légendes -->
         <text x="${padL + innerW / 2}" y="${H - 8}" text-anchor="middle"
