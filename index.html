@@ -471,58 +471,6 @@
       </table>
     </section>
 
-    <!-- ============================================== S_REAL ============================================== -->
-    <section class="slide" data-slide="S_REAL">
-      <h1 style="font-size:38px;">Bonus : validation sur données réelles, sbcdata Leipzig (744 205 patients).</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
-        Pipeline rejoué tel quel sur les données réelles. La narration tient, et le piège s'aggrave.
-      </div>
-
-      <div class="real-grid">
-        <div>
-          <table class="metrics" style="margin-top:6px;">
-            <thead>
-              <tr><th>Métrique</th><th>Simulé (20 000)</th><th>sbcdata Leipzig</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Prévalence sepsis</td><td class="num">6,5 %</td><td class="num highlight">1,4 %</td></tr>
-              <tr><td>scale_pos_weight</td><td class="num">15</td><td class="num highlight">72</td></tr>
-              <tr><td>RL naïve recall @ 0,5</td><td class="num">0,03</td><td class="num">0,10</td></tr>
-              <tr><td>RL naïve accuracy @ 0,5</td><td class="num">0,93</td><td class="num highlight-brick">0,99</td></tr>
-              <tr><td>RF balanced recall @ 0,5</td><td class="num">0,65</td><td class="num">0,86</td></tr>
-              <tr><td>XGBoost recall @ 0,5</td><td class="num">0,73</td><td class="num highlight">0,88</td></tr>
-              <tr><td>XGBoost AUC-ROC</td><td class="num">0,91</td><td class="num highlight">0,95</td></tr>
-              <tr><td>XGBoost AUC-PR</td><td class="num">0,56</td><td class="num">0,30</td></tr>
-            </tbody>
-          </table>
-          <div class="src-note">
-            Source : Steinbach et al. 2024, <em>Clin. Chem.</em> 70(3):506, DOI 10.1093/clinchem/hvae001. Cohorte 2014 à 2019, CC BY 4.0.
-          </div>
-        </div>
-
-        <div class="real-side">
-          <div class="callout-teal" style="font-size:14px;">
-            <strong>Ce qui tient.</strong><br>
-            Piège accuracy plus violent : 0,99 d'accuracy avec un recall de 0,10.<br>
-            Crescendo recall : 0,03 → 0,86 → 0,88 (RL naïve, RF balanced, XGBoost).<br>
-            XGBoost garde un léger avantage en AUC-ROC.<br>
-            La stratégie de rééquilibrage reste la vraie ligne de fracture.
-          </div>
-          <div class="warn-card" style="font-size:14px;">
-            <strong>Ce qui change.</strong><br>
-            5 variables NFS seulement (WBC, HGB, PLT, RBC, MCV) au lieu de 11 (pas de NLR, RDW, différentielle leucocytaire).<br>
-            Cible = sepsis ICD-10, pas hémoculture positive.<br>
-            Cohorte = tous les patients avec NFS, pas une suspicion de bactériémie.<br>
-            Proxy social = <code>Sender</code> (ward d'origine, gradient massif réa vers ambulatoire).
-          </div>
-        </div>
-      </div>
-
-      <div class="phrase-cle-bas">
-        L'enseignement central reste intact : sans stratégie consciente sur le déséquilibre et la métrique, on rate quasiment tous les sepsis. Avec, XGBoost devient compétitif et auditable via SHAP.
-      </div>
-    </section>
-
     <!-- ============================================== SBONUS ============================================== -->
     <section class="slide" data-slide="SBONUS">
       <h1 style="font-size:38px;">Pour rejouer ce pipeline sur des données réelles.</h1>
@@ -717,7 +665,7 @@
       'S3a': 'how-theorie', 'S3b': 'how-theorie', 'S3c': 'how-theorie', 'S3d': 'how-theorie', 'S3e': 'how-theorie',
       'S4a': 'how-cas',
       'S5a': 'how-interp','S5b': 'how-interp','S5c': 'how-interp',
-      'SC':  'closing',   'S_REAL': 'closing', 'SBONUS': 'closing',
+      'SC':  'closing',   'SBONUS': 'closing',
     };
     function updateRoadmap(slideKey) {
       const section = SLIDE_TO_SECTION[slideKey] || 'opening';

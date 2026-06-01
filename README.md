@@ -22,7 +22,7 @@ python -m http.server 8080
 ## Structure
 
 ```
-index.html                 # le deck (18 slides)
+index.html                 # le deck (17 slides)
 assets/css/deck.css        # style (Direction B, blanc clinique, accent teal)
 assets/js/                 # navigation, data loader, slide resizer
 assets/js/animations/      # une animation par fichier (8 animations)
