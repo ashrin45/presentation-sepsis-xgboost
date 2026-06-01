@@ -58,27 +58,57 @@ html, body {
 .slide.active { display: flex; }
 
 /* Mode print : ?print=1 dans l'URL, à utiliser avec Ctrl+P */
-html.print-mode body { background: #fff; }
+html.print-mode,
+html.print-mode body {
+  background: #fff !important;
+  overflow: auto !important;
+  height: auto !important;
+  min-height: auto !important;
+}
 html.print-mode .deck-nav,
 html.print-mode .deck-roadmap { display: none !important; }
+html.print-mode .deck {
+  position: static !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+}
 html.print-mode .slide {
   display: flex !important;
   zoom: 1 !important;
   width: 1280px !important;
   height: 720px !important;
-  margin: 0 0 8px 0 !important;
+  margin: 0 auto 8px !important;
   page-break-after: always;
   break-after: page;
-  box-shadow: none;
+  box-shadow: 0 0 0 1px #E5E7EB;
 }
 @page { size: 1280px 720px; margin: 0; }
 @media print {
-  html, body { background: #fff !important; }
+  html, body {
+    background: #fff !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
   .deck-nav, .deck-roadmap { display: none !important; }
-  .slide { display: flex !important; zoom: 1 !important;
-           width: 1280px !important; height: 720px !important;
-           margin: 0 !important;
-           page-break-after: always; break-after: page; }
+  .deck {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  .slide {
+    display: flex !important;
+    zoom: 1 !important;
+    width: 1280px !important;
+    height: 720px !important;
+    margin: 0 !important;
+    page-break-after: always;
+    break-after: page;
+    box-shadow: none !important;
+  }
 }
 
 .slide h1 {
