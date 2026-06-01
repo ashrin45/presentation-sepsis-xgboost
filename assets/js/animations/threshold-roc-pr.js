@@ -69,7 +69,7 @@
     return { recall: recall, precision: precision, accuracy: accuracy };
   }
 
-  function plotSVG(curve, xKey, yKey, op, xLabel, yLabel) {
+  function plotSVG(curve, xKey, yKey, op, xLabel, yLabel, baselineY) {
     const W = 160, H = 160, padL = 28, padR = 8, padT = 10, padB = 26;
     const innerW = W - padL - padR;
     const innerH = H - padT - padB;
@@ -78,6 +78,11 @@
     const pts = curve.map(p => x(p[xKey]) + ',' + y(p[yKey])).join(' ');
     const diag = xKey === 'fpr'
       ? '<line x1="' + x(0) + '" y1="' + y(0) + '" x2="' + x(1) + '" y2="' + y(1) + '" stroke="' + MUTED + '" stroke-width="1" stroke-dasharray="3,3"/>'
+      : '';
+    // Baseline horizontale (prévalence pour la PR) : seuil "hasard"
+    const baseline = (typeof baselineY === 'number' && baselineY > 0 && baselineY < 1)
+      ? '<line x1="' + x(0) + '" y1="' + y(baselineY) + '" x2="' + x(1) + '" y2="' + y(baselineY) + '" stroke="' + MUTED + '" stroke-width="1" stroke-dasharray="3,3"/>' +
+        '<text x="' + (x(1) - 2) + '" y="' + (y(baselineY) - 3) + '" text-anchor="end" font-family="' + MONO + '" font-size="7" fill="' + MUTED + '">hasard ' + (baselineY * 100).toFixed(1) + '%</text>'
       : '';
     const ticks = [0, 0.5, 1];
     const xTicks = ticks.map(t =>
@@ -89,6 +94,7 @@
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">' +
       '<rect x="' + padL + '" y="' + padT + '" width="' + innerW + '" height="' + innerH + '" fill="none" stroke="' + BORDER + '" stroke-width="1"/>' +
       diag +
+      baseline +
       '<polyline points="' + pts + '" fill="none" stroke="' + TEAL + '" stroke-width="2" stroke-linejoin="round"/>' +
       '<circle cx="' + x(op[xKey]) + '" cy="' + y(op[yKey]) + '" r="5" fill="' + BRICK + '" stroke="#fff" stroke-width="1.5"/>' +
       xTicks + yTicks +
@@ -136,7 +142,7 @@
         '<div class="trp-row trp-numbers">' +
           '<div class="trp-metric"><div class="trp-label" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-transform:uppercase;letter-spacing:0.5px;">Seuil</div><div class="trp-value" data-k="thr" style="font-family:' + MONO + ';font-size:28px;color:' + TEXT + ';font-weight:600;">—</div></div>' +
           '<div class="trp-metric"><div class="trp-label" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-transform:uppercase;letter-spacing:0.5px;">Recall</div><div class="trp-value" data-k="rec" style="font-family:' + MONO + ';font-size:28px;color:' + TEAL + ';font-weight:600;">—</div></div>' +
-          '<div class="trp-metric"><div class="trp-label" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-transform:uppercase;letter-spacing:0.5px;">Precision</div><div class="trp-value" data-k="pre" style="font-family:' + MONO + ';font-size:28px;color:' + TEXT + ';font-weight:600;">—</div></div>' +
+          '<div class="trp-metric"><div class="trp-label" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-transform:uppercase;letter-spacing:0.5px;">Precision</div><div class="trp-value" data-k="pre" style="font-family:' + MONO + ';font-size:28px;color:' + TEXT + ';font-weight:600;">—</div><div class="trp-sub" data-k="pre-sub" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';margin-top:2px;">—</div></div>' +
           '<div class="trp-metric"><div class="trp-label" style="font-family:Inter,sans-serif;font-size:11px;color:' + MUTED + ';text-transform:uppercase;letter-spacing:0.5px;">Accuracy</div><div class="trp-value" data-k="acc" style="font-family:' + MONO + ';font-size:28px;color:' + MUTED + ';font-weight:600;">—</div></div>' +
         '</div>' +
         '<div class="trp-slider" style="margin:16px 0;">' +
@@ -153,10 +159,13 @@
     const valThr = container.querySelector('[data-k="thr"]');
     const valRec = container.querySelector('[data-k="rec"]');
     const valPre = container.querySelector('[data-k="pre"]');
+    const valPreSub = container.querySelector('[data-k="pre-sub"]');
     const valAcc = container.querySelector('[data-k="acc"]');
     const slotCM = container.querySelector('[data-slot="cm"]');
     const slotROC = container.querySelector('[data-slot="roc"]');
     const slotPR = container.querySelector('[data-slot="pr"]');
+
+    const prevalence = nPos / (nPos + nNeg);
 
     function render(thr) {
       const cm = computeConfusion(thr, src, nPos, nNeg);
@@ -164,12 +173,20 @@
       valThr.textContent = fmtThr(thr);
       valRec.textContent = fmtPct(m.recall);
       valPre.textContent = fmtPct(m.precision);
+      if (valPreSub) {
+        if (m.precision > 0) {
+          const n = Math.round(1 / m.precision);
+          valPreSub.textContent = '≈ 1 vrai sepsis pour ' + n + ' alertes';
+        } else {
+          valPreSub.textContent = '—';
+        }
+      }
       valAcc.textContent = fmtPct(m.accuracy);
       slotCM.innerHTML = confusionHTML(cm);
       const opROC = findClosestROC(src.roc_xgb, thr);
       const opPR = findClosestPR(src.pr_xgb, thr);
       slotROC.innerHTML = plotSVG(src.roc_xgb, 'fpr', 'tpr', opROC, '1 - spécificité', 'sensibilité');
-      slotPR.innerHTML = plotSVG(src.pr_xgb, 'recall', 'precision', opPR, 'Recall', 'Precision');
+      slotPR.innerHTML = plotSVG(src.pr_xgb, 'recall', 'precision', opPR, 'Recall', 'Precision', prevalence);
     }
 
     slider.addEventListener('input', (e) => {
