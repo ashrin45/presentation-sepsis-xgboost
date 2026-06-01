@@ -26,7 +26,7 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const W = 720, H = 110;
+    const W = 720, H = 140;
 
     // Bagging : 5 arbres parallèles, gauche
     const bagX = [60, 115, 170, 225, 280];
@@ -69,6 +69,16 @@
         <text x="500" y="100" text-anchor="middle"
               font-family="Inter,sans-serif" font-size="11" font-style="italic" fill="${BRICK}">
           en série
+        </text>
+
+        <!-- Phrases clés sous chaque schéma -->
+        <text x="170" y="128" text-anchor="middle"
+              font-family="Inter,sans-serif" font-size="14" font-weight="600" fill="${TEAL}">
+          Réduit la variance
+        </text>
+        <text x="500" y="128" text-anchor="middle"
+              font-family="Inter,sans-serif" font-size="14" font-weight="600" fill="${BRICK}">
+          Réduit le biais
         </text>
       </svg>
     `;
