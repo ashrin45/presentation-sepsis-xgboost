@@ -69,7 +69,7 @@
     return { recall: recall, precision: precision, accuracy: accuracy };
   }
 
-  function plotSVG(curve, xKey, yKey, op, xLabel, yLabel, baselineY) {
+  function plotSVG(curve, xKey, yKey, op, xLabel, yLabel, baselineY, annotation) {
     const W = 160, H = 160, padL = 28, padR = 8, padT = 10, padB = 26;
     const innerW = W - padL - padR;
     const innerH = H - padT - padB;
@@ -84,6 +84,18 @@
       ? '<line x1="' + x(0) + '" y1="' + y(baselineY) + '" x2="' + x(1) + '" y2="' + y(baselineY) + '" stroke="' + MUTED + '" stroke-width="1" stroke-dasharray="3,3"/>' +
         '<text x="' + (x(1) - 2) + '" y="' + (y(baselineY) - 3) + '" text-anchor="end" font-family="' + MONO + '" font-size="7" fill="' + MUTED + '">hasard ' + (baselineY * 100).toFixed(1) + '%</text>'
       : '';
+    // Annotation près du point op (ex: "1 / 7 alertes" pour la PR)
+    let annot = '';
+    if (annotation) {
+      const px = x(op[xKey]);
+      const py = y(op[yKey]);
+      const right = px < (padL + innerW / 2);
+      const above = py > (padT + innerH * 0.35);
+      const tx = right ? px + 8 : px - 8;
+      const ty = above ? py - 6 : py + 14;
+      const anchor = right ? 'start' : 'end';
+      annot = '<text x="' + tx + '" y="' + ty + '" text-anchor="' + anchor + '" font-family="' + MONO + '" font-size="9" font-weight="700" fill="' + BRICK + '">' + annotation + '</text>';
+    }
     const ticks = [0, 0.5, 1];
     const xTicks = ticks.map(t =>
       '<text x="' + x(t) + '" y="' + (padT + innerH + 12) + '" text-anchor="middle" font-family="' + MONO + '" font-size="8" fill="' + MUTED + '">' + t.toFixed(1) + '</text>'
@@ -97,6 +109,7 @@
       baseline +
       '<polyline points="' + pts + '" fill="none" stroke="' + TEAL + '" stroke-width="2" stroke-linejoin="round"/>' +
       '<circle cx="' + x(op[xKey]) + '" cy="' + y(op[yKey]) + '" r="5" fill="' + BRICK + '" stroke="#fff" stroke-width="1.5"/>' +
+      annot +
       xTicks + yTicks +
       '<text x="' + (padL + innerW / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="' + TEXT + '">' + xLabel + '</text>' +
       '<text x="10" y="' + (padT + innerH / 2) + '" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="' + TEXT + '" transform="rotate(-90 10 ' + (padT + innerH / 2) + ')">' + yLabel + '</text>' +
@@ -186,7 +199,8 @@
       const opROC = findClosestROC(src.roc_xgb, thr);
       const opPR = findClosestPR(src.pr_xgb, thr);
       slotROC.innerHTML = plotSVG(src.roc_xgb, 'fpr', 'tpr', opROC, '1 - spécificité', 'sensibilité');
-      slotPR.innerHTML = plotSVG(src.pr_xgb, 'recall', 'precision', opPR, 'Recall', 'Precision', prevalence);
+      const prAnnot = m.precision > 0 ? '1 / ' + Math.round(1 / m.precision) : '';
+      slotPR.innerHTML = plotSVG(src.pr_xgb, 'recall', 'precision', opPR, 'Recall', 'Precision', prevalence, prAnnot);
     }
 
     slider.addEventListener('input', (e) => {
