@@ -168,7 +168,7 @@
       slotCM.innerHTML = confusionHTML(cm);
       const opROC = findClosestROC(src.roc_xgb, thr);
       const opPR = findClosestPR(src.pr_xgb, thr);
-      slotROC.innerHTML = plotSVG(src.roc_xgb, 'fpr', 'tpr', opROC, 'FPR', 'TPR');
+      slotROC.innerHTML = plotSVG(src.roc_xgb, 'fpr', 'tpr', opROC, '1 - spécificité', 'sensibilité');
       slotPR.innerHTML = plotSVG(src.pr_xgb, 'recall', 'precision', opPR, 'Recall', 'Precision');
     }
 
