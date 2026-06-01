@@ -47,6 +47,30 @@ html, body {
 
 .slide.active { display: flex; }
 
+/* Mode print : ?print=1 dans l'URL, à utiliser avec Ctrl+P */
+html.print-mode body { background: #fff; }
+html.print-mode .deck-nav,
+html.print-mode .deck-roadmap { display: none !important; }
+html.print-mode .slide {
+  display: flex !important;
+  zoom: 1 !important;
+  width: 1280px !important;
+  height: 720px !important;
+  margin: 0 0 8px 0 !important;
+  page-break-after: always;
+  break-after: page;
+  box-shadow: none;
+}
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { background: #fff !important; }
+  .deck-nav, .deck-roadmap { display: none !important; }
+  .slide { display: flex !important; zoom: 1 !important;
+           width: 1280px !important; height: 720px !important;
+           margin: 0 !important;
+           page-break-after: always; break-after: page; }
+}
+
 .slide h1 {
   font-weight: 800;
   font-size: 50px;

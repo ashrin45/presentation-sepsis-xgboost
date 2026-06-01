@@ -6,6 +6,7 @@
   const MARGIN = 0.96;
 
   function resize() {
+    if (document.documentElement.classList.contains('print-mode')) return;
     const sw = window.innerWidth  * MARGIN;
     const sh = window.innerHeight * MARGIN;
     const scale = Math.min(sw / DESIGN_W, sh / DESIGN_H);

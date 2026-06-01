@@ -57,6 +57,30 @@ html, body {
 
 .slide.active { display: flex; }
 
+/* Mode print : ?print=1 dans l'URL, à utiliser avec Ctrl+P */
+html.print-mode body { background: #fff; }
+html.print-mode .deck-nav,
+html.print-mode .deck-roadmap { display: none !important; }
+html.print-mode .slide {
+  display: flex !important;
+  zoom: 1 !important;
+  width: 1280px !important;
+  height: 720px !important;
+  margin: 0 0 8px 0 !important;
+  page-break-after: always;
+  break-after: page;
+  box-shadow: none;
+}
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { background: #fff !important; }
+  .deck-nav, .deck-roadmap { display: none !important; }
+  .slide { display: flex !important; zoom: 1 !important;
+           width: 1280px !important; height: 720px !important;
+           margin: 0 !important;
+           page-break-after: always; break-after: page; }
+}
+
 .slide h1 {
   font-weight: 800;
   font-size: 50px;
@@ -761,6 +785,13 @@ table.confusion td.bad  { color: var(--brick); font-weight: 700; background: var
 </style>
 </head>
 <body>
+  <script>
+    // Mode print : ?print=1 dans l'URL → empile toutes les slides et désactive
+    // resize + nav. À utiliser avec Ctrl+P depuis Chrome pour exporter un PDF.
+    if (location.search.indexOf('print') !== -1) {
+      document.documentElement.classList.add('print-mode');
+    }
+  </script>
   <main class="deck">
 
     <!-- ============================================== S0 ============================================== -->
@@ -62123,6 +62154,7 @@ document.addEventListener("DOMContentLoaded", () => document.dispatchEvent(new C
   const MARGIN = 0.96;
 
   function resize() {
+    if (document.documentElement.classList.contains('print-mode')) return;
     const sw = window.innerWidth  * MARGIN;
     const sh = window.innerHeight * MARGIN;
     const scale = Math.min(sw / DESIGN_W, sh / DESIGN_H);
@@ -62196,6 +62228,25 @@ document.addEventListener("DOMContentLoaded", () => document.dispatchEvent(new C
 })();
 
 </script>
+
+  <script>
+    // Mode print : on attend que les scripts defer aient tourné, qu'on ait
+    // les données, puis on monte les animations de chaque slide une à une.
+    if (location.search.indexOf('print') !== -1) {
+      window.addEventListener('DOMContentLoaded', async () => {
+        try { await window.deckDataReady; } catch (e) { /* on tente quand même */ }
+        await new Promise(r => setTimeout(r, 150));
+        const slides = document.querySelectorAll('.slide');
+        for (let i = 0; i < slides.length; i++) {
+          document.dispatchEvent(new CustomEvent('slidechange', {
+            detail: { index: i, slide: slides[i] }
+          }));
+          await new Promise(r => setTimeout(r, 250));
+        }
+        document.title = 'Sepsis XGBoost — version PDF';
+      });
+    }
+  </script>
 
   <script>
     // Helpers

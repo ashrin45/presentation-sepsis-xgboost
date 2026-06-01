@@ -10,6 +10,13 @@
   <link rel="stylesheet" href="assets/css/deck.css">
 </head>
 <body>
+  <script>
+    // Mode print : ?print=1 dans l'URL → empile toutes les slides et désactive
+    // resize + nav. À utiliser avec Ctrl+P depuis Chrome pour exporter un PDF.
+    if (location.search.indexOf('print') !== -1) {
+      document.documentElement.classList.add('print-mode');
+    }
+  </script>
   <main class="deck">
 
     <!-- ============================================== S0 ============================================== -->
@@ -544,6 +551,25 @@
   <script src="assets/js/animations/threshold-roc-pr.js" defer></script>
   <script src="assets/js/slide-resizer.js" defer></script>
   <script src="assets/js/deck-navigation.js" defer></script>
+
+  <script>
+    // Mode print : on attend que les scripts defer aient tourné, qu'on ait
+    // les données, puis on monte les animations de chaque slide une à une.
+    if (location.search.indexOf('print') !== -1) {
+      window.addEventListener('DOMContentLoaded', async () => {
+        try { await window.deckDataReady; } catch (e) { /* on tente quand même */ }
+        await new Promise(r => setTimeout(r, 150));
+        const slides = document.querySelectorAll('.slide');
+        for (let i = 0; i < slides.length; i++) {
+          document.dispatchEvent(new CustomEvent('slidechange', {
+            detail: { index: i, slide: slides[i] }
+          }));
+          await new Promise(r => setTimeout(r, 250));
+        }
+        document.title = 'Sepsis XGBoost — version PDF';
+      });
+    }
+  </script>
 
   <script>
     // Helpers
