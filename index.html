@@ -172,12 +172,15 @@
 
     <!-- ============================================== S2b ============================================== -->
     <section class="slide" data-slide="S2b">
-      <h1 style="font-size:38px;">Le choix de la métrique n'est pas technique, il est clinique.</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
-        En sepsis, un faux négatif tue. Une fausse alerte coûte une hémoculture. Le rapport de gravité dicte la métrique.
+      <h1 style="font-size:38px;">Métrique et seuil, deux décisions cliniques (pas techniques).</h1>
+      <div class="phrase-cle-haut" style="font-size:17px; margin-top:12px;">
+        En sepsis, un faux négatif tue. Une fausse alerte coûte une hémoculture. Le rapport de gravité dicte à la fois la <strong>métrique</strong> que l'on pilote et le <strong>seuil</strong> auquel on déclenche l'alerte.
       </div>
       <div id="trp-s2b" class="anim-anchor"></div>
-      <div class="phrase-cle-bas">
+      <div class="callout-teal" style="margin-top:12px; font-size:14px;">
+        <strong>Glissez le curseur de 0,50 à 0,30</strong> : recall 72 % → 87 % (+14 sepsis détectés sur 100 vrais positifs), précision 29 % → 15 % (3 fausses alertes pour 1 vrai positif au lieu de 2). Cette bascule n'est pas la mienne, c'est celle du service.
+      </div>
+      <div class="phrase-cle-bas" style="font-size:14px;">
         On pilote au recall et à l'AUC-PR. L'accuracy ne s'occupe pas du sort des patients qu'elle rate.
       </div>
     </section>
@@ -340,18 +343,6 @@
 
       <div class="phrase-cle-bas">
         Le gain XGBoost n'est pas dans la discrimination, il est dans la sensibilité à seuil égal. C'est exactement ce qu'on veut en sepsis.
-      </div>
-    </section>
-
-    <!-- ============================================== S4b ============================================== -->
-    <section class="slide" data-slide="S4b">
-      <h1 style="font-size:38px;">Abaisser le seuil de 0,5 à 0,3, un arbitrage clinique.</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:14px;">
-        Combien de fausses alertes est-on prêt à accepter pour récupérer <strong>une dizaine de sepsis manqués supplémentaires</strong> sur 100 vrais positifs ?
-      </div>
-      <div id="trp-s4b" class="anim-anchor"></div>
-      <div class="phrase-cle-bas" style="font-size:15px;">
-        Cette décision n'est pas la mienne. C'est celle du clinicien et du service. Le modèle doit la rendre <strong>visible</strong> et <strong>chiffrable</strong>.
       </div>
     </section>
 
@@ -663,7 +654,7 @@
       'S1a': 'why',       'S1b': 'why',
       'S2a': 'when',      'S2b': 'when',
       'S3a': 'how-theorie', 'S3b': 'how-theorie', 'S3c': 'how-theorie', 'S3d': 'how-theorie', 'S3e': 'how-theorie',
-      'S4a': 'how-cas',   'S4b': 'how-cas',
+      'S4a': 'how-cas',
       'S5a': 'how-interp','S5b': 'how-interp','S5c': 'how-interp',
       'SC':  'closing',   'SBONUS': 'closing',
     };
@@ -737,18 +728,6 @@
       if (s === 'S3d' && window.mountNanDefaultDirection) {
         const target = document.getElementById('nan-default-direction');
         mountOnce(target, t => window.mountNanDefaultDirection(t));
-      }
-
-      // S4b : threshold ROC PR (init 0.3)
-      if (s === 'S4b') {
-        const target = document.getElementById('trp-s4b');
-        if (target && target.dataset.mounted !== '1' && window.mountThresholdRocPR) {
-          try {
-            await window.deckDataReady;
-            window.mountThresholdRocPR(target, window.deckData, 0.3);
-            target.dataset.mounted = '1';
-          } catch (err) { console.error('[S4b] mount failed', err); }
-        }
       }
 
       // S5a : Shapley 30s
