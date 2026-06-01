@@ -237,29 +237,32 @@
 
     <!-- ============================================== S3c ============================================== -->
     <section class="slide" data-slide="S3c">
-      <h1 style="font-size:38px;">Learning rate, régularisation, early stopping, la discipline du boosting.</h1>
-      <div class="phrase-cle-haut" style="font-size:18px; margin-top:18px;">
-        Sans discipline, le boosting peut tout retenir, bruit inclus. Trois leviers tracent la limite.
+      <h1 style="font-size:36px;">Pourquoi XGBoost pénalise la complexité, et comment.</h1>
+      <div class="phrase-cle-haut" style="font-size:16px; margin-top:10px;">
+        Un modèle <strong>trop complexe</strong> (beaucoup d'arbres, feuilles aux valeurs extrêmes) finit par apprendre le <strong>bruit</strong> des données d'entraînement plutôt que le signal généralisable. C'est le surapprentissage. Trois leviers le contiennent.
       </div>
-      <div class="s3c-stack">
+      <div class="defs-box" style="margin-top:8px;">
+        <div><strong>Loss XGBoost</strong> = erreur de prédiction <em>+ pénalité de complexité</em>. Le modèle ne minimise pas que l'erreur d'apprentissage, il paye un coût pour chaque arbre ajouté et pour chaque feuille à valeur extrême. Cette pénalité pousse à un modèle <em>plus simple à erreur égale</em>.</div>
+      </div>
+      <div class="s3c-stack" style="margin-top:8px;">
         <div class="card teal-border">
-          <h2>1. Learning rate η</h2>
-          <p>Facteur multiplicatif appliqué à chaque nouvel arbre quand il est ajouté à la somme. Plage 0,01 (lent et robuste) à 0,3 (rapide et instable). Petit η et beaucoup d'arbres = plus robuste qu'un grand η et peu d'arbres.</p>
-          <p class="card-tag">Sepsis : <strong>η = 0,05</strong></p>
+          <h2 style="font-size:15px;">1. Learning rate η, freiner chaque arbre</h2>
+          <p style="font-size:13px;">Au lieu d'ajouter l'arbre entier au modèle, on en garde une fraction η. Petit η = chaque arbre corrige peu, le modèle converge lentement et reste lisse. Évite que les premiers arbres surajustent.</p>
+          <p class="card-tag" style="font-size:12px;">Sepsis : <strong>η = 0,05</strong> (lent, robuste)</p>
         </div>
         <div class="card teal-border">
-          <h2>2. Régularisation L1 (α) et L2 (λ) sur les feuilles</h2>
-          <p>L1 pénalise la magnitude, pousse certains poids à zéro (feuilles muettes). L2 pénalise le carré, évite les feuilles à valeurs extrêmes. Limite la sur-confiance d'un arbre individuel.</p>
-          <p class="card-tag">Sepsis : <strong>λ = 1, α = 0</strong></p>
+          <h2 style="font-size:15px;">2. Régularisation L1 et L2 sur les feuilles</h2>
+          <p style="font-size:13px;">Chaque feuille d'arbre porte un poids (la valeur prédite quand on y arrive). <strong>L1 (α)</strong> pénalise la magnitude du poids et pousse certaines feuilles à zéro (sparsity, feuilles « muettes »). <strong>L2 (λ)</strong> pénalise le carré du poids et évite les valeurs extrêmes (pas de feuille à +10 qui force une prédiction quasi certaine sur un petit groupe). Résultat : pas de sur-confiance locale.</p>
+          <p class="card-tag" style="font-size:12px;">Sepsis : <strong>λ = 1, α = 0</strong></p>
         </div>
         <div class="card teal-border">
-          <h2>3. Early stopping</h2>
-          <p>Arrêter l'ajout d'arbres si la loss de validation ne progresse plus depuis N rounds. Trouve le nombre optimal d'arbres sans validation croisée externe.</p>
-          <p class="card-tag">Sepsis : <strong>early_stopping_rounds = 30, max_trees = 500</strong></p>
+          <h2 style="font-size:15px;">3. Early stopping, arrêter avant le surapprentissage</h2>
+          <p style="font-size:13px;">À chaque arbre ajouté, on évalue la loss sur un jeu de validation séparé. Tant qu'elle baisse, on continue. Quand elle stagne ou remonte (signe que le modèle commence à apprendre du bruit), on s'arrête. Trouve automatiquement le bon nombre d'arbres.</p>
+          <p class="card-tag" style="font-size:12px;">Sepsis : <strong>early_stopping_rounds = 30, max_trees = 500</strong> (le modèle s'est arrêté à 67 arbres)</p>
         </div>
       </div>
-      <div class="phrase-cle-bas">
-        Trois leviers indépendants qui marchent ensemble. C'est la combinaison qui tient, pas chaque pièce isolément.
+      <div class="phrase-cle-bas" style="font-size:14px;">
+        Trois leviers indépendants qui imposent la même discipline : préférer un modèle simple, à performance équivalente. C'est ce qui permet à XGBoost de généraliser plutôt que mémoriser.
       </div>
     </section>
 
